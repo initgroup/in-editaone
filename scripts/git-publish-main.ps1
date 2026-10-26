@@ -4,9 +4,10 @@ Stages all changes, creates an auto-numbered daily commit, rebases from origin/m
 
 .DESCRIPTION
 Commit message format:
-INIT Data Editing System - yyyy.MM.dd-N
+IN-EDITAONE - yyyy.MM.dd-N
 
 The sequence number is calculated as the largest existing commit number for today plus one.
+The selected remote fetch/push URLs are configured for IN-EDITAONE before publishing.
 The deployed service URL is shown after a successful push.
 
 .EXAMPLE
@@ -16,8 +17,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\git-publish-main.p
 param(
     [string]$Remote = "origin",
     [string]$Branch = "main",
-    [string]$MessagePrefix = "INIT Data Editing System",
-    [string]$DeployUrl = "https://data-editing-system.onrender.com"
+    [string]$MessagePrefix = "IN-EDITAONE",
+    [string]$DeployUrl = $env:RENDER_EXTERNAL_URL,
+    [ValidateNotNullOrEmpty()]
+    [string]$RepositoryUrl = "https://github.com/initgroup/in-editaone.git"
 )
 
 $ErrorActionPreference = "Stop"
@@ -32,14 +35,15 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Resolve-Path (Join-Path $scriptDir "..")
 Set-Location $repoRoot
 
-$deployUri = $null
-if (
-    -not [Uri]::TryCreate($DeployUrl, [UriKind]::Absolute, [ref]$deployUri) -or
-    $deployUri.Scheme -notin @("http", "https")
-) {
-    throw "DeployUrl must be an absolute HTTP(S) URL: $DeployUrl"
+$normalizedDeployUrl = ""
+if (-not [string]::IsNullOrWhiteSpace($DeployUrl)) {
+    $deployUri = $null
+    if (-not [Uri]::TryCreate($DeployUrl, [UriKind]::Absolute, [ref]$deployUri) -or
+        $deployUri.Scheme -notin @("http", "https")) {
+        throw "DeployUrl must be an absolute HTTP(S) URL."
+    }
+    $normalizedDeployUrl = $deployUri.AbsoluteUri.TrimEnd("/")
 }
-$normalizedDeployUrl = $deployUri.AbsoluteUri.TrimEnd("/")
 
 function Invoke-Git {
     param([Parameter(ValueFromRemainingArguments = $true)][string[]]$GitArgs)
@@ -81,6 +85,14 @@ function Get-NextCommitMessage {
 }
 
 Invoke-Git status --short
+$remotes = @(& git remote)
+if ($LASTEXITCODE -ne 0) { throw "Unable to list Git remotes." }
+if ($Remote -in $remotes) {
+    Invoke-Git remote set-url $Remote $RepositoryUrl
+} else {
+    Invoke-Git remote add $Remote $RepositoryUrl
+}
+Invoke-Git remote set-url --push $Remote $RepositoryUrl
 Invoke-Git fetch $Remote $Branch
 
 if (Test-Path "requirements.txt") {
@@ -111,5 +123,9 @@ Invoke-Git push $Remote $Branch
 
 Write-Host ""
 Write-Host "Publish complete." -ForegroundColor Green
-Write-Host "Render deployment URL: $normalizedDeployUrl" -ForegroundColor Green
-Write-Host "Health check URL: $normalizedDeployUrl/api/health" -ForegroundColor DarkGray
+if ($normalizedDeployUrl) {
+    Write-Host "Render deployment URL: $normalizedDeployUrl" -ForegroundColor Green
+    Write-Host "Health check URL: $normalizedDeployUrl/api/health" -ForegroundColor DarkGray
+} else {
+    Write-Host "Check the actual service URL in Render, or pass -DeployUrl. Repository rename does not verify a service URL." -ForegroundColor Yellow
+}

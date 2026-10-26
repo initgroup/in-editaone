@@ -2,7 +2,7 @@ window.MENU_CONFIG = [
     {
         type: 'page',
         page: 'home',
-        title: 'INIT Data Editing System',
+        title: 'IN-EDITAONE',
         label: 'Main Home',
         iconClass: 'fas fa-house text-teal-300',
         active: false,

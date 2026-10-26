@@ -22,9 +22,9 @@
 
     const TEXT = {
         en: {
-            eyebrow: "IN-DEPS Editing Report",
+            eyebrow: "IN-EDITAONE Editing Report",
             title: "Basic Reports",
-            provider: "This report is provided by the IN-DEPS system.",
+            provider: "This report is provided by the IN-EDITAONE system.",
             footer: "Consistent editing reports for comparable data quality decisions.",
             close: "Close",
             retry: "Retry",
@@ -58,12 +58,12 @@
             ratioBasis: "Numerator {numerator} / denominator {denominator}",
             details: "Report details",
             definitionsTitle: "Terms and calculation basis",
-            definitionsDescription: "Definitions applied consistently across IN-DEPS Basic Reports.",
+            definitionsDescription: "Definitions applied consistently across IN-EDITAONE Basic Reports.",
             term: "Term",
             definition: "Definition",
-            batchEyebrow: "IN-DEPS Integrated Editing Report",
+            batchEyebrow: "IN-EDITAONE Integrated Editing Report",
             batchTitle: "All Basic Reports",
-            batchProvider: "All 20 IN-DEPS Basic Reports are included in one continuous document.",
+            batchProvider: "All 20 IN-EDITAONE Basic Reports are included in one continuous document.",
             batchPreparingTitle: "Preparing all reports",
             batchPreparingDescription: "Collecting and organizing all 21 reports. This may take a moment.",
             batchLoadTimeout: "Generating all reports took longer than five minutes. Please try again.",
@@ -87,9 +87,9 @@
             noValue: "-"
         },
         ko: {
-            eyebrow: "IN-DEPS 에디팅 보고서",
+            eyebrow: "IN-EDITAONE 에디팅 보고서",
             title: "기본형 보고서",
-            provider: "본 보고서는 IN-DEPS 시스템에서 제공합니다.",
+            provider: "본 보고서는 IN-EDITAONE 시스템에서 제공합니다.",
             footer: "서로 다른 데이터도 동일한 기준으로 비교할 수 있는 일관된 에디팅 보고서입니다.",
             close: "닫기",
             retry: "다시 시도",
@@ -123,12 +123,12 @@
             ratioBasis: "분자 {numerator} / 분모 {denominator}",
             details: "보고서 상세",
             definitionsTitle: "용어 및 산정 기준",
-            definitionsDescription: "IN-DEPS 기본형 보고서에 일관되게 적용되는 기준입니다.",
+            definitionsDescription: "IN-EDITAONE 기본형 보고서에 일관되게 적용되는 기준입니다.",
             term: "용어",
             definition: "정의",
-            batchEyebrow: "IN-DEPS 통합 에디팅 보고서",
+            batchEyebrow: "IN-EDITAONE 통합 에디팅 보고서",
             batchTitle: "전체 기본형 보고서",
-            batchProvider: "IN-DEPS 기본형 보고서 21종을 하나의 연속된 문서로 제공합니다.",
+            batchProvider: "IN-EDITAONE 기본형 보고서 21종을 하나의 연속된 문서로 제공합니다.",
             batchPreparingTitle: "전체 보고서를 준비하고 있습니다",
             batchPreparingDescription: "21종 보고서를 모두 집계하고 순서대로 구성하고 있습니다. 잠시만 기다려 주세요.",
             batchLoadTimeout: "전체 보고서 생성이 5분을 초과했습니다. 다시 시도해 주세요.",
@@ -238,7 +238,7 @@
         ui.toolbar?.setAttribute("aria-label", t("reportActions"));
         ui.meta?.setAttribute("aria-label", t("reportMetadata"));
         ui.kpis?.setAttribute("aria-label", t("keyIndicators"));
-        document.title = `${state.reportTitle || t(state.isBatch ? "batchTitle" : "title")} | IN-DEPS`;
+        document.title = `${state.reportTitle || t(state.isBatch ? "batchTitle" : "title")} | IN-EDITAONE`;
     }
 
     function bindEvents() {
@@ -415,7 +415,7 @@
         state.reportTitle = String(title);
         ui.title.textContent = state.reportTitle;
         ui.provider.textContent = providerStatement(model);
-        document.title = `${state.reportTitle} | IN-DEPS`;
+        document.title = `${state.reportTitle} | IN-EDITAONE`;
         renderBasis(model);
         renderMetadata(model, definition);
         renderKpis(model);
@@ -437,7 +437,7 @@
         ui.title.textContent = state.reportTitle;
         ui.eyebrow.textContent = t("batchEyebrow");
         ui.provider.textContent = providerStatement(model, t("batchProvider"));
-        document.title = `${state.reportTitle} | IN-DEPS`;
+        document.title = `${state.reportTitle} | IN-EDITAONE`;
         renderBasis(model);
 
         const reports = normalizeBatchReports(model);
@@ -1130,7 +1130,7 @@
         }
         if (!filename) {
             const extension = format === "xlsx" ? "xlsx" : format;
-            const safeTitle = String(state.reportTitle || state.reportCode || "IN-DEPS_Report")
+            const safeTitle = String(state.reportTitle || state.reportCode || "IN-EDITAONE_Report")
                 .replace(/[\\/:*?"<>|\u0000-\u001f]+/g, "_")
                 .slice(0, 90);
             filename = `${safeTitle}.${extension}`;

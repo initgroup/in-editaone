@@ -2,7 +2,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "INIT Backup Source",
+            "label": "IN-EDITAONE Backup Source",
             "type": "shell",
             "command": "powershell",
             "args": [
@@ -20,7 +20,7 @@
             "problemMatcher": []
         },
         {
-            "label": "INIT Backup Git Source",
+            "label": "IN-EDITAONE Backup Git Source",
             "type": "shell",
             "command": "powershell",
             "args": [
@@ -38,7 +38,7 @@
             "problemMatcher": []
         },
         {
-            "label": "INIT Backup Working Source",
+            "label": "IN-EDITAONE Backup Working Source",
             "type": "shell",
             "command": "powershell",
             "args": [
@@ -56,15 +56,15 @@
             "problemMatcher": []
         },
         {
-            "label": "Run Server",
+            "label": "IN-EDITAONE Start Service",
             "type": "process",
             "command": "powershell.exe",
             "args": [
-                "-NoExit",
+                "-NoProfile",
                 "-ExecutionPolicy",
                 "Bypass",
-                "-Command",
-                ". '${workspaceFolder}\\venv\\Scripts\\Activate.ps1'; python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000"
+                "-File",
+                "${workspaceFolder}\\scripts\\start-service.ps1"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -77,6 +77,54 @@
                 "reveal": "always",
                 "panel": "dedicated",
                 "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "IN-EDITAONE Stop Service",
+            "type": "process",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\scripts\\stop-service.ps1"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "IN-EDITAONE Restart Service",
+            "type": "process",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\scripts\\restart-service.ps1"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "IN-EDITAONE Publish Git",
+            "type": "process",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\scripts\\git-publish-main.ps1"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
             },
             "problemMatcher": []
         }

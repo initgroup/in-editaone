@@ -2,13 +2,13 @@ Communication job
 By the end, platform users, operators, and reviewers should understand how IN-DEPS connects data selection, four-stage rule discovery, Flow execution, human review, editing, and controlled operational application because every change remains grounded in a traceable Run and explicit execution contract.
 
 Primary source
-- D:\work\data-editing-system\frontend\help\in-deps-system-guide.html
+- D:\work\in-editaone\frontend\help\in-deps-system-guide.html
 
 Supporting project sources
-- D:\work\data-editing-system\frontend\config\menu.config.js
-- D:\work\data-editing-system\frontend\help\help-content.json
-- D:\work\data-editing-system\frontend\assets\indeps_banner_bilingual.png
-- D:\work\data-editing-system\frontend\assets\init-logo.png
+- D:\work\in-editaone\frontend\config\menu.config.js
+- D:\work\in-editaone\frontend\help\help-content.json
+- D:\work\in-editaone\frontend\assets\indeps_banner_bilingual.png
+- D:\work\in-editaone\frontend\assets\init-logo.png
 
 Negative reference only
 - C:\Users\kse\Desktop\인뎁스(IN-DEPS)_시스템_소개서 (1).pdf

@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, ConfigDict
 from typing import Any, Optional
 from pathlib import Path
+from backend.project_paths import relocated_project_path
 import base64
 import hashlib
 import hmac
@@ -376,6 +377,9 @@ def _resolve_project_path(path_value: Optional[str]) -> Optional[str]:
     normalized_value = str(path_value).strip()
     if not normalized_value:
         return None
+    relocated = relocated_project_path(normalized_value, PROJECT_ROOT)
+    if relocated is not None:
+        return str(relocated)
     project_path = (PROJECT_ROOT / normalized_value.lstrip("/\\")).resolve()
     path = Path(path_value)
     if path.is_absolute():

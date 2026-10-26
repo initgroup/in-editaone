@@ -1,4 +1,30 @@
-# Data Editing System
+# 인에디타원 · IN-EDITAONE
+
+**INIT One-Stop Data Editing&Imputation Solution**
+
+제품 로고는 영문 워드마크와 한글명 **인에디타원**을 함께 표시합니다. 배너에는 제품 설명을 추가하며, 로그인·사이드바·도움말에서도 같은 이름을 사용합니다.
+
+프로젝트 기본 경로는 `D:\work\in-editaone`, Git 주소는 `https://github.com/initgroup/in-editaone.git`입니다. GitHub 저장소 이름 변경도 완료했습니다. [전환 안내](reference/BRAND_MIGRATION.md)에서 연결·배포 절차를 확인합니다. 로고·도움말·보고서 표시명 변경은 기존 테이블명, SQL, 사용자 데이터, API 경로, 인증·설정 키를 변경하지 않습니다.
+
+실행 소스는 `frontend/`, `backend/`, `database/`에, 환경 재현 목록·브랜드 제작 원본은 [reference/](reference/README.md)에 보관합니다.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-service.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\stop-service.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\restart-service.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\backup-source.ps1 -Mode Working
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\git-publish-main.ps1
+```
+
+스크립트는 자신의 위치로 프로젝트 루트를 계산합니다. 다른 작업 폴더에서도 스크립트의 절대경로로 호출할 수 있습니다. 관리형 서비스 종료는 시작 스크립트가 기록하고 실행 파일·명령줄·생성 시각을 확인한 프로세스 트리만 종료합니다. 별도 터미널에서 실행한 reload 개발 서버는 해당 터미널에서 종료합니다. 백업의 `Git` 모드는 현재 커밋, `Working` 모드는 미커밋 수정까지 복사합니다. `git-publish-main.ps1`은 기본적으로 `origin`의 fetch·push 주소를 `https://github.com/initgroup/in-editaone.git`으로 설정하고 main에 반영합니다. 운영 URL 출력이 필요하면 `-DeployUrl`에 실제 주소를 전달합니다. Render 연결 상태도 확인합니다.
+
+로컬 폴더명 변경을 완료했습니다. 다른 작업 폴더에서 서비스 명령을 실행할 때는 현재 프로젝트 경로를 사용합니다.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File D:\work\in-editaone\scripts\start-service.ps1 -Reload
+powershell -NoProfile -ExecutionPolicy Bypass -File D:\work\in-editaone\scripts\stop-service.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File D:\work\in-editaone\scripts\restart-service.ps1 -Reload
+```
 
 Oracle 기반 데이터 편집/규칙 발굴 업무를 위한 FastAPI + 정적 프론트엔드 프로젝트입니다. 백엔드는 Oracle DB와 SQL 파일을 통해 업무 API를 제공하고, 프론트엔드는 `frontend/index.html`에서 페이지 HTML/JS를 동적으로 로드합니다.
 
@@ -59,7 +85,7 @@ Python 가상환경을 준비합니다.
 ```powershell
 python -m venv venv
 .\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
 필요한 환경 변수는 `.env.example`을 복사해 `.env`에 설정합니다. `.env`, `secreats/`, `instantclient/`는 비밀 정보 또는 로컬 의존성이므로 Git에 올리지 않습니다.
@@ -165,7 +191,7 @@ Render의 Python Web Service에서는 Dashboard의 **Build Command**를 다음�
 bash scripts/render-build.sh
 ```
 
-Git 자동 배포는 새 커밋으로 기존 Build Command를 실행할 뿐, Dashboard에 저장된 Build Command 자체를 저장소 내용으로 변경하지 않습니다. 기존 서비스가 `pip install -r requirements.txt`만 실행하고 있다면 위 명령으로 직접 변경한 뒤 **Clear build cache & deploy**를 한 번 수행해야 합니다.
+Git 자동 배포는 새 커밋으로 기존 Build Command를 실행할 뿐, Dashboard에 저장된 Build Command 자체를 저장소 내용으로 변경하지 않습니다. 기존 서비스가 `.\venv\Scripts\python.exe -m pip install -r requirements.txt`만 실행하고 있다면 위 명령으로 직접 변경한 뒤 **Clear build cache & deploy**를 한 번 수행해야 합니다.
 
 이 스크립트는 Python 및 Node 의존성을 설치하고, Playwright Chromium을 프로젝트 내부에 설치합니다. Render Native Python 빌드는 root/su 권한을 제공하지 않으므로 `playwright install --with-deps`는 사용하지 않습니다. 마지막에는 실제 Chromium으로 작은 PDF를 생성하며, Build 로그에 `Playwright Chromium PDF smoke test passed.`가 없으면 해당 배포를 정상 PDF 배포로 판단하지 않습니다. **Start Command**는 기존 FastAPI 설정을 유지하되 외부 요청을 받을 수 있도록 `0.0.0.0`과 Render의 `PORT`를 사용해야 합니다.
 

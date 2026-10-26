@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { Presentation, PresentationFile } from "@oai/artifact-tool";
 
 const W = 794;
@@ -31,12 +32,12 @@ const C = {
   white: "#FFFFFF",
 };
 
-const FINAL_PPTX = "D:/work/data-editing-system/tmp/in-deps-booklet/in-deps-system-booklet-a4.pptx";
-const RENDER_DIR = "D:/work/data-editing-system/tmp/in-deps-booklet/rendered";
-const LOGO_PATH = "D:/work/data-editing-system/frontend/assets/indeps_banner_bilingual.png";
-const INIT_LOGO_PATH = "D:/work/data-editing-system/frontend/assets/init-logo.png";
-const GUIDE_SOURCE = "D:/work/data-editing-system/frontend/help/in-deps-system-guide.html";
-const MENU_SOURCE = "D:/work/data-editing-system/frontend/config/menu.config.js";
+const FINAL_PPTX = fileURLToPath(new URL("./in-deps-system-booklet-a4.pptx", import.meta.url));
+const RENDER_DIR = fileURLToPath(new URL("./rendered", import.meta.url));
+const LOGO_PATH = fileURLToPath(new URL("../../frontend/assets/indeps_banner_bilingual.png", import.meta.url));
+const INIT_LOGO_PATH = fileURLToPath(new URL("../../frontend/assets/init-logo.png", import.meta.url));
+const GUIDE_SOURCE = fileURLToPath(new URL("../../frontend/help/in-deps-system-guide.html", import.meta.url));
+const MENU_SOURCE = fileURLToPath(new URL("../../frontend/config/menu.config.js", import.meta.url));
 
 async function readImage(path) {
   const bytes = await fs.readFile(path);

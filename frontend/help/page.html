@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menu Help - INIT Data Editing System</title>
+    <title>Menu Help - IN-EDITAONE</title>
     <meta name="ai-context-kind" content="menu-help">
     <meta name="ai-context-priority" content="highest">
     <script src="../js/cache-version-utils.js"></script>
@@ -757,7 +757,7 @@
             const privacyNote = page.privacyNote || (currentHelpLanguage === "en" ? currentHelpText.privacyFallback : implementation.privacyNote);
             const pageTitle = page.title || page.label || page.pageCode;
             document.documentElement.dataset.menuCode = page.pageCode;
-            document.title = `${pageTitle} ${currentHelpText.helpWord} - INIT Data Editing System`;
+            document.title = `${pageTitle} ${currentHelpText.helpWord} - IN-EDITAONE`;
             document.getElementById("helpTitle").textContent = `${pageTitle} ${currentHelpText.helpWord}`;
             document.getElementById("helpSummary").textContent = page.summary || "";
             document.getElementById("helpMeta").innerHTML = [

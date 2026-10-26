@@ -1,6 +1,6 @@
-# Data Editing System 개발자 환경 이전 가이드
+# IN-EDITAONE 개발자 환경 이전 가이드
 
-이 문서는 `data-editing-system` 프로젝트를 다른 PC로 옮겨 개발할 때 확인해야 할 항목을 정리한 안내서입니다. 압축 해제나 `git clone` 직후 이 파일을 먼저 확인하세요.
+이 문서는 `in-editaone` 프로젝트를 다른 PC로 옮겨 개발할 때 확인해야 할 항목을 정리한 안내서입니다. 압축 해제나 `git clone` 직후 이 파일을 먼저 확인하세요.
 
 ## 1. 현재 점검 결과 요약
 
@@ -32,7 +32,7 @@ git remote -v
 정상 기준:
 
 - 기본 브랜치는 `main`입니다.
-- 원격 저장소는 `origin https://github.com/initgroup/data-editing-system.git` 형식입니다.
+- 원격 저장소는 `origin https://github.com/initgroup/in-editaone.git` 형식입니다.
 - 새 PC에서는 `.env`, `venv/`, `node_modules/`, `secreats/`, `instantclient/`가 없어도 정상입니다. `.env.example`을 복사해 `.env`를 직접 만들어야 합니다.
 
 배포 전 정리 권장. 이미 정리된 커밋을 받은 개발자는 다시 실행할 필요가 없습니다.
@@ -44,6 +44,8 @@ git rm --cached oracledb-3.4.2-cp312-cp312-win_amd64.whl
 ```
 
 위 명령은 Git 추적만 해제하고 로컬 파일은 남깁니다. 지갑 ZIP은 비밀 파일이므로 원격 저장소에 올리면 안 됩니다. `oracledb-3.4.2-cp312-cp312-win_amd64.whl`은 Python 3.12 Windows 전용 오프라인 설치용 파일입니다. 온라인 설치가 가능하면 `requirements.txt`의 `oracledb==3.4.2`로 충분합니다.
+
+현재 오프라인 Oracle 설치 파일은 `reference/environment/installers/`에 보관합니다. 의존성 목록·잠금 파일과 설치 안내는 `reference/environment/`, 제품명·폴더·원격 저장소 전환 상태는 `reference/BRAND_MIGRATION.md`를 확인합니다.
 
 `.gitignore`에는 다음 로컬 폴더/파일이 제외되어 있어야 합니다.
 
@@ -82,7 +84,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 Tailwind CSS를 수정하거나 Node 패키지를 복원해야 하면 다음을 실행합니다.
 
 ```powershell
-npm install
+npm ci
 ```
 
 ## 5. `.env` 설정
@@ -129,7 +131,17 @@ DB_ORACLE_MODE=thin
 
 ## 6. 로컬 서비스 구동
 
-가상환경을 활성화한 상태라면:
+현재 프로젝트 폴더는 `D:\work\in-editaone`입니다. 관리형 서비스는 아래 명령으로 시작·종료·재시작합니다. 스크립트 위치에서 루트를 계산하므로 다른 작업 폴더에서도 실행할 수 있습니다.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File D:\work\in-editaone\scripts\start-service.ps1 -Reload
+powershell -NoProfile -ExecutionPolicy Bypass -File D:\work\in-editaone\scripts\stop-service.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File D:\work\in-editaone\scripts\restart-service.ps1 -Reload
+```
+
+폴더 이동 전에 열어 둔 터미널은 닫고 새 폴더에서 다시 엽니다. 기존 터미널의 활성화된 `VIRTUAL_ENV`와 `PATH`에는 이전 위치가 남을 수 있습니다. CLI 경로 복구는 `reference/environment/README.md`를 확인합니다.
+
+별도 터미널에서 직접 개발 서버를 실행할 때, 가상환경을 활성화한 상태라면:
 
 ```powershell
 uvicorn main:app --reload --host 127.0.0.1 --port 8000
@@ -182,7 +194,13 @@ pip install -r requirements.txt
 
 ## 9. Git 배포 절차
 
-배포 전 상태 확인:
+자동 배포 명령은 다음과 같습니다. 스크립트가 `origin`의 fetch·push 주소를 `https://github.com/initgroup/in-editaone.git`으로 설정한 뒤 기존 커밋·rebase·push 절차를 수행합니다. 저장소 주소를 별도로 지정해야 하면 `-RepositoryUrl`을 사용할 수 있습니다.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\git-publish-main.ps1
+```
+
+수동으로 진행할 때는 아래 순서를 따릅니다. 배포 전 상태 확인:
 
 ```powershell
 git status --short
@@ -222,7 +240,7 @@ git push origin main
 - `Git`: 현재 커밋된 `HEAD` 기준으로 백업합니다. 내부적으로 `git archive`를 사용합니다.
 - `Working`: 현재 작업 폴더를 백업합니다. `.git`, `venv`, `node_modules`, `.env`, `secreats`, `etc\secrets`, `instantclient`, `__pycache__` 등을 제외합니다.
 
-기본 백업 위치는 프로젝트 상위 폴더의 `backup`입니다. 예를 들어 프로젝트가 `D:\work\data-editing-system`이면 기본 백업 위치는 `D:\work\backup`입니다. 다른 위치를 쓰려면 아래처럼 명시하세요.
+기본 백업 위치는 프로젝트 상위 폴더의 `backup`입니다. 예를 들어 프로젝트가 `D:\work\in-editaone`이면 기본 백업 위치는 `D:\work\backup`입니다. 다른 위치를 쓰려면 아래처럼 명시하세요.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\backup-source.ps1 -Mode Git -BackupRoot "D:\work\backup"
@@ -240,7 +258,7 @@ VS Code에서는 `Ctrl + Shift + P` 후 `Tasks: Run Task`를 선택하면 됩니
 ## 11. README.md, AGENTS.md, codex01.txt 확인 기준
 
 - `README.md`: 로컬 개발 기준으로 `.env.example`, 상대 Wallet 경로, `.\venv\Scripts\python.exe -m uvicorn ...` 실행 예시를 사용합니다. 배포 환경에서는 Wallet 경로를 환경에 맞게 바꾸세요.
-- `AGENTS.md`: 프로젝트 작업 규칙 문서입니다. `.\venv\Scripts\...` 명령은 Windows 기준입니다. 프로젝트 폴더 위치가 `D:\work\data-editing-system`이 아니어도, 프로젝트 루트에서 실행하면 됩니다.
+- `AGENTS.md`: 프로젝트 작업 규칙 문서입니다. `.\venv\Scripts\...` 명령은 Windows 기준입니다. 프로젝트 폴더 위치가 `D:\work\in-editaone`이 아니어도, 프로젝트 루트에서 실행하면 됩니다.
 - `prompt/codex01.txt`: 개인 참고 메모입니다. `D:\work\backup` 같은 경로는 해당 PC 예시이며, 다른 PC에서는 `-BackupRoot`를 바꾸세요. `git reset --hard` 예시는 위험 명령이므로 일반 배포 절차로 사용하지 마세요.
 
 ## 12. 이전 후 최소 검증

@@ -3,10 +3,10 @@
   "pageCode": "M06001",
   "description": "English labels for Basic Reports.",
   "labels": {
-    "providerEyebrow": "IN-DEPS Editing Report",
+    "providerEyebrow": "IN-EDITAONE Editing Report",
     "structuredReportTitle": "Basic Reports",
     "structuredReportDescription": "Summarize editing results with fixed report definitions so different projects and datasets can be compared consistently.",
-    "providedByIndeps": "This report is provided by the IN-DEPS system.",
+    "providedByIndeps": "This report is provided by the IN-EDITAONE system.",
     "projectSearchLabel": "Search projects",
     "projectSearchPlaceholder": "Search by project name, code, or description",
     "resetSearch": "Reset",

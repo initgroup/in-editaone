@@ -1,12 +1,12 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {pathToFileURL} from 'node:url';
+import {fileURLToPath, pathToFileURL} from 'node:url';
 import {Presentation, PresentationFile} from '@oai/artifact-tool';
 import {gs} from './gs.mjs';
 import {procurement} from './procurement.mjs';
 import {sources} from './sources.mjs';
 
-const workspaceDir='D:/work/data-editing-system/artifacts/gs_procurement_20260923';
+const workspaceDir=fileURLToPath(new URL('../', import.meta.url));
 const tmp=path.join(workspaceDir,'.build');
 const font='Malgun Gothic';
 const theme={ink:'#152F43',accent:'#0D6E75',muted:'#526676',line:'#CAD5DB',pale:'#F3F6F8'};
@@ -106,5 +106,5 @@ for(const d of allDecks){
    if(idx%10===0)console.log(`${d.key}: rendered ${idx+1}/${total}`);
   }
  }
- await fs.writeFile(path.join(tmp,`${d.key}.metadata.json`),JSON.stringify({total,owners,candidate,font},null,2));
+ await fs.writeFile(path.join(tmp,`${d.key}.metadata.json`),JSON.stringify({total,owners,candidate:path.basename(candidate),font},null,2));
 }

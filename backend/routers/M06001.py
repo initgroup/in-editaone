@@ -48,7 +48,7 @@ def _download_headers(file_name: str) -> dict[str, str]:
         extension = "bin"
     return {
         "Content-Disposition": (
-            f"attachment; filename=\"IN-DEPS-report.{extension}\"; "
+            f"attachment; filename=\"IN-EDITAONE-report.{extension}\"; "
             f"filename*=UTF-8''{quote(file_name)}"
         ),
         "Cache-Control": "private, no-store",
@@ -154,7 +154,7 @@ def download_batch_report(
             "_".join(
                 str(item)
                 for item in (
-                    "IN-DEPS",
+                    "IN-EDITAONE",
                     "ALL",
                     project.get("PROJECT_CODE") or project.get("PROJECT_NAME") or "PROJECT",
                     scenario.get("SCENARIO_CODE") or scenario.get("SCENARIO_NAME") or "ALL",
@@ -244,7 +244,7 @@ def download_report(
             "_".join(
                 str(item)
                 for item in (
-                    "IN-DEPS",
+                    "IN-EDITAONE",
                     str(report.get("code") or report_code).upper(),
                     project.get("PROJECT_CODE") or project.get("PROJECT_NAME") or "PROJECT",
                     scenario.get("SCENARIO_CODE") or scenario.get("SCENARIO_NAME") or "ALL",

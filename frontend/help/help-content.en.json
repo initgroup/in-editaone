@@ -1,7 +1,7 @@
 {
   "version": "2026.08.26",
   "language": "en",
-  "systemName": "INIT Data Editing System",
+  "systemName": "IN-EDITAONE",
   "pages": {
     "M00001": {
       "pageCode": "M00001",
@@ -22,7 +22,7 @@
     },
     "login": {
       "pageCode": "login",
-      "title": "Data Editing System Login",
+      "title": "IN-EDITAONE Login",
       "label": "Login",
       "group": "System",
       "status": "enabled",
@@ -53,7 +53,7 @@
     },
     "home": {
       "pageCode": "home",
-      "title": "INIT Data Editing System",
+      "title": "IN-EDITAONE",
       "label": "Main Home",
       "group": "Main",
       "status": "enabled",
@@ -79,7 +79,7 @@
       ],
       "systemGuide": {
         "hero": {
-          "eyebrow": "INIT DATA EDITING · SYSTEM GUIDE",
+          "eyebrow": "IN-EDITAONE · SYSTEM GUIDE",
           "tags": ["Main home", "Complete menu guide", "Interactive architecture"],
           "metricAriaLabel": "System help summary",
           "metrics": {
@@ -807,7 +807,7 @@
         { "name": "Project Cards", "description": "A responsive, server-paged card grid shows project attributes and editing metrics." },
         { "name": "Report Context", "description": "Project, scenario, Flow Run, and editing session fix the basis for every report." },
         { "name": "Fixed Report Catalog", "description": "All 21 reports remain in a stable order with available, partial, no-data, or not-applicable states." },
-        { "name": "Individual Report Window", "description": "Shows the selected report's IN-DEPS statement, KPIs, tables, definitions, and HTML/XLSX/PDF downloads." },
+        { "name": "Individual Report Window", "description": "Shows the selected report's IN-EDITAONE statement, KPIs, tables, definitions, and HTML/XLSX/PDF downloads." },
         { "name": "Combined Report Window", "description": "Shows a status summary, table of contents, and all 21 reports in sequence, with a single HTML/XLSX/PDF download." }
       ],
       "workflow": [

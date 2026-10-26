@@ -3,7 +3,7 @@ const FETCH_TIMEOUT = 10000; // fetch 요청 타임아웃 기본값(ms)
 const LOADING_DELAY_MS = 300; // 로딩 표시 지연 시간(ms)
 const APP_VERSION = window.APP_CACHE_VERSION || "0.0.0"; // Asset cache version.
 const DEFAULT_PAGE_CODE = "login";
-const DEFAULT_PAGE_TITLE = "Data Editing System Login";
+const DEFAULT_PAGE_TITLE = "IN-EDITAONE Login";
 const SHELL_HIDDEN_PAGES = ["login"];
 const PUBLIC_PAGES = ["login"];
 const SESSION_TIMEOUT_FALLBACK_MS = 60 * 60 * 1000;
@@ -370,7 +370,7 @@ const PageManager = {
     },
 
     getCloseFallbackPage() {
-        return { pageCode: "home", title: window.getShellHomeTitle?.() || "Data Editing System" };
+        return { pageCode: "home", title: window.getShellHomeTitle?.() || "IN-EDITAONE" };
     },
 
     async runPageBeforeCloseHooks(pageCodes, context = {}) {
@@ -1049,7 +1049,7 @@ const PageManager = {
         }
         if (this.requiresAuth(pageCode) && !this.isPageAllowed(pageCode)) {
             if (this.isCurrentNavigation(navigation)) {
-                await this.load("home", window.getShellHomeTitle?.() || "Data Editing System", false);
+                await this.load("home", window.getShellHomeTitle?.() || "IN-EDITAONE", false);
             }
             return emptyResult();
         }
@@ -1822,7 +1822,7 @@ async function applyTargetDbChange() {
         closeTargetDbChangeDialog();
         updateCurrentTargetDbSelect();
         await window.reloadShellDisplaySettings?.();
-        await PageManager.load("home", window.getShellHomeTitle?.() || "Data Editing System");
+        await PageManager.load("home", window.getShellHomeTitle?.() || "IN-EDITAONE");
     } catch (error) {
         alert(error.message || "Target DB change failed.");
     }
@@ -1853,7 +1853,7 @@ function getInitialPageConfig() {
             const menu = window.MENU_PAGE_MAP?.[savedPage];
             return { pageCode: savedPage, title: savedTitle || menu?.title || menu?.label || savedPage };
         }
-        return { pageCode: "home", title: window.getShellHomeTitle?.() || "Data Editing System" };
+        return { pageCode: "home", title: window.getShellHomeTitle?.() || "IN-EDITAONE" };
     }
 
     return { pageCode: DEFAULT_PAGE_CODE, title: DEFAULT_PAGE_TITLE };

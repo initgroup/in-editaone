@@ -4751,7 +4751,7 @@
         byId("closeButton", "qeCloseButton")?.addEventListener("click", () => {
             if (isEmbeddedWorkspace()) {
                 const host = getApplicationWindow();
-                host?.PageManager.load("home", host.getShellHomeTitle?.() || "Data Editing System", true);
+                host?.PageManager.load("home", host.getShellHomeTitle?.() || "IN-EDITAONE", true);
             }
             else if (!getWorkspaceLifecycleState().canClose) showToast(getWorkspaceLifecycleState().message, "warning");
             else if (window.opener) window.close();

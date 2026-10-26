@@ -48,8 +48,8 @@ _BATCH_QUERY_CACHE: ContextVar[dict[tuple[str, str], list[dict[str, Any]]] | Non
 REPORT_SCHEMA_VERSION = "1.0"
 REPORT_DEFINITION_VERSION = "M06001_STRUCTURED_REPORT_V5"
 REPORT_PROVIDER = {
-    "name": "IN-DEPS",
-    "statement": "본 보고서는 IN-DEPS 시스템에서 제공합니다.",
+    "name": "IN-EDITAONE",
+    "statement": "본 보고서는 IN-EDITAONE 시스템에서 제공합니다.",
 }
 
 

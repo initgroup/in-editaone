@@ -2,6 +2,17 @@
 
 이 문서는 Codex가 이 저장소에서 작업할 때 따라야 할 프로젝트 전용 가이드입니다.
 
+## 제품명과 경로
+
+- 한글 제품명: `인에디타원`, 영문 제품명: `IN-EDITAONE`.
+- 제품 설명: `INIT One-Stop Data Editing&Imputation Solution`.
+- 프로젝트 폴더: `D:\work\in-editaone`, Git 저장소: `initgroup/in-editaone`.
+- 스크립트 절대경로와 VS Code 작업 폴더는 `D:\work\in-editaone`을 사용합니다. 스크립트 내부 루트는 `$PSScriptRoot` 또는 파일 위치로 계산합니다.
+- `INIT$_*` DB 오브젝트, SQL ID, API 경로, `INIT_*` 환경변수, 저장된 JSON/브라우저 키는 제품명과 별개인 호환 계약입니다. 브랜딩을 이유로 변경하지 않습니다.
+- `backend/branding.py`는 기존 기본 표시값을 읽을 때만 새 브랜드로 매핑합니다. DB 저장값을 갱신하지 않습니다.
+- 배포 소스와 `reference/` 참조 자료를 구분하고, 의존성 변경 시 `reference/environment/`의 재현 목록도 함께 유지합니다.
+- 로컬 폴더 변경은 완료했습니다. `complete-project-rename.ps1`은 새 폴더에서 재실행해도 서버를 중지하지 않습니다. 전환 절차와 검증 범위는 `reference/BRAND_MIGRATION.md`를 확인합니다.
+
 ## 작업 원칙
 
 - 사용자의 기존 변경사항을 되돌리지 않습니다. 현재 워킹트리는 변경/삭제/추가 파일이 많을 수 있으므로 작업 전 `git status --short`로 범위를 확인합니다.

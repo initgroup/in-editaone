@@ -24,11 +24,11 @@ router = APIRouter()
 
 
 _ROOT_DIR = Path(__file__).resolve().parents[2]
-_SYSTEM_GUIDE_PATH = _ROOT_DIR / "frontend" / "help" / "in-deps-system-guide.html"
-_SYSTEM_GUIDE_PDF_PATH = _ROOT_DIR / "frontend" / "help" / "IN-DEPS_Product_Introduction_KR_v1.0.pdf"
-_SYSTEM_GUIDE_PDF_FILE_NAME = "IN-DEPS_Product_Introduction_KR_v1.0.pdf"
+_SYSTEM_GUIDE_PATH = _ROOT_DIR / "frontend" / "help" / "in-editaone-system-guide.html"
+_SYSTEM_GUIDE_PDF_PATH = _ROOT_DIR / "frontend" / "help" / "IN-EDITAONE_Product_Introduction_KR_v1.0.pdf"
+_SYSTEM_GUIDE_PDF_FILE_NAME = "IN-EDITAONE_Product_Introduction_KR_v1.0.pdf"
 _SYSTEM_GUIDE_IMAGE_PATHS = {
-    "../assets/indeps_compact_bilingual.png": _ROOT_DIR / "frontend" / "assets" / "indeps_compact_bilingual.png",
+    "../assets/ineditaone_compact_bilingual.png": _ROOT_DIR / "frontend" / "assets" / "ineditaone_compact_bilingual.png",
     "../assets/init-logo.png": _ROOT_DIR / "frontend" / "assets" / "init-logo.png",
 }
 

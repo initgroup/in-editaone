@@ -7,8 +7,8 @@ from backend.routers import home
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 HELP_PAGE_PATH = ROOT_DIR / "frontend" / "help" / "page.html"
-SYSTEM_GUIDE_PATH = ROOT_DIR / "frontend" / "help" / "in-deps-system-guide.html"
-SYSTEM_GUIDE_PDF_PATH = ROOT_DIR / "frontend" / "help" / "IN-DEPS_Product_Introduction_KR_v1.0.pdf"
+SYSTEM_GUIDE_PATH = ROOT_DIR / "frontend" / "help" / "in-editaone-system-guide.html"
+SYSTEM_GUIDE_PDF_PATH = ROOT_DIR / "frontend" / "help" / "IN-EDITAONE_Product_Introduction_KR_v1.0.pdf"
 
 
 class SystemGuideDownloadTests(unittest.TestCase):
@@ -38,13 +38,13 @@ class SystemGuideDownloadTests(unittest.TestCase):
         self.assertEqual("text/html; charset=utf-8", response.media_type)
         self.assertEqual("inline", response.headers["content-disposition"])
         self.assertEqual(3, response.body.count(b'data:image/png;base64,'))
-        self.assertNotIn(b'../assets/indeps_compact_bilingual.png', response.body)
+        self.assertNotIn(b'../assets/ineditaone_compact_bilingual.png', response.body)
         self.assertNotIn(b'../assets/init-logo.png', response.body)
 
     def test_preview_source_expands_tabs_for_print_and_keeps_all_menu_cards(self):
         guide = SYSTEM_GUIDE_PATH.read_text(encoding="utf-8")
 
-        self.assertEqual(2, guide.count('src="../assets/indeps_compact_bilingual.png"'))
+        self.assertEqual(2, guide.count('src="../assets/ineditaone_compact_bilingual.png"'))
         self.assertEqual(1, guide.count('src="../assets/init-logo.png"'))
         self.assertIn("white-space: nowrap;", guide)
         self.assertIn(".tab-list { display: none; }", guide)
@@ -62,7 +62,7 @@ class SystemGuideDownloadTests(unittest.TestCase):
         require_user.assert_called_once_with(request)
         self.assertEqual(SYSTEM_GUIDE_PDF_PATH.read_bytes(), response.body)
         self.assertEqual("application/pdf", response.media_type)
-        self.assertIn("IN-DEPS_Product_Introduction_KR_v1.0.pdf", response.headers["content-disposition"])
+        self.assertIn("IN-EDITAONE_Product_Introduction_KR_v1.0.pdf", response.headers["content-disposition"])
         self.assertIn("filename*=UTF-8''", response.headers["content-disposition"])
         self.assertEqual("private, no-store", response.headers["cache-control"])
 

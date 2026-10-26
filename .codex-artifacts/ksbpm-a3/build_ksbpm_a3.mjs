@@ -1,8 +1,9 @@
 import fs from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { Presentation, PresentationFile } from "@oai/artifact-tool";
 
-const OUT_DIR = "D:/work/data-editing-system/.codex-artifacts/ksbpm-a3/final-render";
-const FINAL_PPTX = "D:/work/data-editing-system/outputs/나라통계시스템_KSBPM_AI_10대과제_A3_요약.pptx";
+const OUT_DIR = fileURLToPath(new URL("./final-render", import.meta.url));
+const FINAL_PPTX = fileURLToPath(new URL("../../outputs/나라통계시스템_KSBPM_AI_10대과제_A3_요약.pptx", import.meta.url));
 
 const W = 1587;
 const H = 1123;

@@ -3,10 +3,10 @@
   "pageCode": "M06001",
   "description": "기본형 보고서 화면의 한국어 문구입니다.",
   "labels": {
-    "providerEyebrow": "IN-DEPS 에디팅 보고서",
+    "providerEyebrow": "IN-EDITAONE 에디팅 보고서",
     "structuredReportTitle": "기본형 보고서",
     "structuredReportDescription": "에디팅 결과를 고정된 보고서 기준으로 요약하여 서로 다른 프로젝트와 데이터도 일관되게 비교합니다.",
-    "providedByIndeps": "본 보고서는 IN-DEPS 시스템에서 제공합니다.",
+    "providedByIndeps": "본 보고서는 IN-EDITAONE 시스템에서 제공합니다.",
     "projectSearchLabel": "프로젝트 검색",
     "projectSearchPlaceholder": "프로젝트명, 코드 또는 설명 검색",
     "resetSearch": "초기화",

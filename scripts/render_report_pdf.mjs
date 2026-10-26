@@ -84,7 +84,7 @@ try {
         if (document.fonts?.ready) await document.fonts.ready;
         const containsKorean = /[\uac00-\ud7a3]/u.test(document.body?.textContent || "");
         if (!containsKorean) return;
-        const bundledFamily = "IN-DEPS Noto Sans KR";
+        const bundledFamily = "IN-EDITAONE Noto Sans KR";
         const hasBundledFace = Array.from(document.fonts || []).some((face) => (
             String(face.family || "").replace(/["']/g, "") === bundledFamily
         ));

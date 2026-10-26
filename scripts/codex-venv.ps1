@@ -13,4 +13,16 @@ if (-not (Test-Path -LiteralPath $venvPython)) {
     throw "venv Python not found: $venvPython"
 }
 
-& $venvPython @args
+Push-Location -LiteralPath $repoRoot
+$previousErrorActionPreference = $ErrorActionPreference
+try {
+    # Native stderr is a normal output stream; the exit code determines failure.
+    $ErrorActionPreference = 'Continue'
+    & $venvPython @args
+    $pythonExitCode = $LASTEXITCODE
+}
+finally {
+    $ErrorActionPreference = $previousErrorActionPreference
+    Pop-Location
+}
+exit $pythonExitCode

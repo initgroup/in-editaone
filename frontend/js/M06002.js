@@ -812,7 +812,7 @@
                 code,
                 title: String(firstValue(report, ["reportTitle", "REPORT_TITLE", "REPORT_NAME", "title", "name"], code)),
                 description: String(firstValue(report, ["reportDescription", "REPORT_DESCRIPTION", "description"], this.t("reportDescriptionFallback", "선택한 기준으로 생성되는 기본형 보고서입니다."))),
-                source: firstValue(report, ["sourceMenu", "SOURCE_MENU", "sourceMenus", "SOURCE_MENUS", "category", "CATEGORY"], "IN-DEPS"),
+                source: firstValue(report, ["sourceMenu", "SOURCE_MENU", "sourceMenus", "SOURCE_MENUS", "category", "CATEGORY"], "IN-EDITAONE"),
                 availability: String(availability).toUpperCase(),
                 blocks: this.normalizeBlocks(report)
             };

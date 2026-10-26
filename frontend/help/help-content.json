@@ -1,6 +1,6 @@
 {
   "version": "2026.08.26",
-  "systemName": "INIT Data Editing System",
+  "systemName": "IN-EDITAONE",
   "pages": {
     "M00001": {
       "pageCode": "M00001",
@@ -85,7 +85,7 @@
       ],
       "systemGuide": {
         "hero": {
-          "eyebrow": "INIT DATA EDITING · SYSTEM GUIDE",
+          "eyebrow": "IN-EDITAONE · SYSTEM GUIDE",
           "tags": ["메인 홈", "전체 메뉴 안내", "대화형 시스템 구성도"],
           "metricAriaLabel": "시스템 도움말 요약",
           "metrics": {
@@ -1180,7 +1180,7 @@
         { "name": "프로젝트 카드", "description": "검색과 서버 페이징을 적용한 반응형 카드 그리드에서 프로젝트 기본 속성과 주요 처리 건수를 확인합니다." },
         { "name": "보고 기준", "description": "프로젝트, 시나리오, Flow Run과 에디팅 세션을 선택해 모든 보고서의 기준을 고정합니다." },
         { "name": "고정 보고서 카탈로그", "description": "21종 보고서를 항상 같은 순서로 표시하고 제공 가능, 일부 제공, 데이터 없음, 해당 없음 상태를 보여줍니다." },
-        { "name": "개별 보고서 새 창", "description": "선택한 보고서의 IN-DEPS 제공 문구, KPI, 상세 표, 산정 기준과 HTML/XLSX/PDF 다운로드를 제공합니다." },
+        { "name": "개별 보고서 새 창", "description": "선택한 보고서의 IN-EDITAONE 제공 문구, KPI, 상세 표, 산정 기준과 HTML/XLSX/PDF 다운로드를 제공합니다." },
         { "name": "통합 보고서 새 창", "description": "21종 상태 요약과 목차, 모든 보고서 내용을 연속으로 보여주고 단일 HTML/XLSX/PDF 파일로 내려받습니다." }
       ],
       "workflow": [

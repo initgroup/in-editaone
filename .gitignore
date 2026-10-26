@@ -37,3 +37,10 @@ Wallet_*.zip
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Local service state and isolated branding verification tools
+/.runtime/
+/tmp/branding-tools/
+/tmp/branding-qa/
+/tmp/rebrand_text.py
+/tmp/pdf-*-before.png

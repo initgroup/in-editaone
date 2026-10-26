@@ -4,9 +4,9 @@
   "pageCode": "login",
   "description": "Korean labels and messages for the login page.",
   "labels": {
-    "title": "인아이티 데이터 에디팅 시스템 로그인",
+    "title": "인에디타원 로그인",
     "loginLanguage": "로그인 언어",
-    "introEyebrow": "인아이티 데이터 에디팅 시스템",
+    "introEyebrow": "인에디타원 · IN-EDITAONE",
     "introHeadline": "데이터를 이해하고,",
     "introHeadlineAccent": "신뢰할 수 있는 규칙으로.",
     "introLead": "컬럼 유형과 분포를 분석해 편집 규칙을 발견하고, 위반 데이터를 검증하여 추적 가능한 워크플로우로 실행합니다.",

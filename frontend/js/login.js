@@ -2,9 +2,9 @@
     const PAGE_CODE = "login";
     const { getContainerEl } = PageManager.createHelper(PAGE_CODE);
     const LOGIN_LABEL_FALLBACKS = {
-        title: "INIT Data Editing System Login",
+        title: "IN-EDITAONE Login",
         loginLanguage: "Login language",
-        introEyebrow: "INIT Data Editing System",
+        introEyebrow: "IN-EDITAONE",
         introHeadline: "Understand your data.",
         introHeadlineAccent: "Build rules you can trust.",
         introLead: "Analyze columns and distributions, discover editing rules, validate violations, and run every workflow with a traceable history.",
@@ -589,7 +589,7 @@
                     return;
                 }
                 await window.reloadShellDisplaySettings?.();
-                PageManager.load("home", window.getShellHomeTitle?.() || "Data Editing System");
+                PageManager.load("home", window.getShellHomeTitle?.() || "IN-EDITAONE");
             } catch (error) {
                 const translated = this.translateServerMessage(error.message, "loginFailed");
                 this.messageKey = translated.key;

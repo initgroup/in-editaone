@@ -158,7 +158,7 @@ GS 인증·납품 검증을 준비할 때에는 실제 배포 버전, 지원 Ora
 
 ### 2026-09-25 소스 검증 기록
 
-- 작업 위치: `D:\work\data-editing-system`, 브랜치: `codex/integrated-editing`.
+- 작업 위치: `D:\work\in-editaone`, 브랜치: `codex/integrated-editing`.
 - `scripts/test_offline.py`: 백엔드 400개 통과. `.env`, Oracle 연결 및 네트워크 연결을 차단했습니다.
 - `node --test quick-edit/tests/*.test.js`: 브라우저 상호작용을 포함한 프런트 검사 106개 통과.
 - 보고서 공존·구형 스키마·긴 수식 및 기존 구조화/사용자 보고서 관련 검사 49개 통과. 일부는 위 백엔드 검사와 중복됩니다.

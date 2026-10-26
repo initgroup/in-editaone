@@ -135,7 +135,7 @@ const PageManager = {
             } else {
                 location.hash = '#';
                 const titleEl = document.getElementById('contentTitle');
-                if (titleEl) titleEl.innerText = "Data Editing System";
+                if (titleEl) titleEl.innerText = "IN-EDITAONE";
 
                 document.querySelectorAll('#mainNav a, #mainNav button').forEach(el => {
                     el.classList.remove('menu-active', 'bg-blue-700');
@@ -618,5 +618,5 @@ window.addEventListener('DOMContentLoaded', () => {
     LayoutManager.init();
     AIChatManager.init();
     ConsoleLogger.init();
-    PageManager.load('home', 'Data Editing System');
+    PageManager.load('home', 'IN-EDITAONE');
 });

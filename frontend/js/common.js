@@ -725,7 +725,7 @@ const CommonUtils = {
         window.PageManager.resetWorkspaceForLogout?.();
         window.MenuRenderer?.render?.("mainNav", window.handleMenuClick);
         setTimeout(() => {
-            window.PageManager?.load?.("login", "Data Editing System Login", false);
+            window.PageManager?.load?.("login", "IN-EDITAONE Login", false);
         }, 0);
     },
 
@@ -1310,15 +1310,15 @@ const DataEditingSystem = {
                 path: 'docProps/app.xml',
                 content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
-<Application>INIT Data Editing System</Application>
+<Application>IN-EDITAONE</Application>
 </Properties>`
             },
             {
                 path: 'docProps/core.xml',
                 content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-<dc:creator>INIT Data Editing System</dc:creator>
-<cp:lastModifiedBy>INIT Data Editing System</cp:lastModifiedBy>
+<dc:creator>IN-EDITAONE</dc:creator>
+<cp:lastModifiedBy>IN-EDITAONE</cp:lastModifiedBy>
 <dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created>
 <dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified>
 </cp:coreProperties>`

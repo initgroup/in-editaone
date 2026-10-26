@@ -130,7 +130,7 @@
             sessionStorage.removeItem("initBootstrapAdminLoginId");
             PageManager.clearLoginSession?.();
             PageManager.resetWorkspaceForLogout?.();
-            PageManager.load("login", "Data Editing System Login");
+            PageManager.load("login", "IN-EDITAONE Login");
         },
 
         switchTab(tabName) {
@@ -511,7 +511,7 @@
                     alert("Please log in again.");
                     PageManager.clearLoginSession?.();
                     PageManager.resetWorkspaceForLogout?.();
-                    await PageManager.load("login", "Data Editing System Login");
+                    await PageManager.load("login", "IN-EDITAONE Login");
                     return;
                 }
                 this.renderLog(json.message || "Connection profile deleted.", "success");
@@ -556,7 +556,7 @@
                 sessionStorage.removeItem("loginNotice");
                 sessionStorage.setItem("loginNoticeKey", "initialSetupCompleted");
                 PageManager.clearLoginSession?.();
-                await PageManager.load("login", "Data Editing System Login");
+                await PageManager.load("login", "IN-EDITAONE Login");
             } catch (error) {
                 this.renderLog(error.message || "Initial system setup failed.", "error");
             }
@@ -700,7 +700,7 @@
                         "Target DB setup completed. Login again and select the target DB."
                     );
                     PageManager.clearLoginSession?.();
-                    PageManager.load("login", "Data Editing System Login");
+                    PageManager.load("login", "IN-EDITAONE Login");
                 } else {
                     this.renderDeployLog(`${summary.join("\n")}\n\nBasic installation completed. You can move to login when ready.`, "success");
                 }
@@ -712,7 +712,7 @@
                             "Target DB setup completed. Login again and select the target DB."
                         );
                         PageManager.clearLoginSession?.();
-                        PageManager.load("login", "Data Editing System Login");
+                        PageManager.load("login", "IN-EDITAONE Login");
                     } else {
                         this.renderDeployLog(`${summary.join("\n")}\n\nBasic installation completed. You can move to login when ready.`, "success");
                     }
@@ -725,7 +725,7 @@
                             "Target DB setup completed. Login again and select the target DB."
                         );
                         PageManager.clearLoginSession?.();
-                        PageManager.load("login", "Data Editing System Login");
+                        PageManager.load("login", "IN-EDITAONE Login");
                     } else {
                         this.renderDeployLog(`${summary.join("\n")}\n\nBasic installation completed. You can move to login when ready.`, "success");
                     }

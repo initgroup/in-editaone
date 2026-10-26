@@ -108,7 +108,7 @@ SECTION_TITLES_EN = {
 TEXT_EN = {
     "대상 컬럼·Symbolic 선정 순으로 최대 300개 수식의 원문을 표시합니다. 통합·혼합 수식의 Confidence는 발굴 시 학습 표본, 탐지 후 전체 원본에서 IF 조건을 충족한 행 중 허용오차 이내 행의 비율이며 검증 표본 점수·Symbolic 점수와 합산하지 않습니다. 선정 여부는 Symbolic 발굴 결과에만 적용되며 최종 사용자 선정과 구분합니다.": "Shows complete expressions for up to 300 formulas ordered by target column and Symbolic discovery selection. Integrated/mixed Confidence is the within-tolerance share of rows satisfying IF, using the training sample at discovery and the full source after detection. It is not combined with validation-sample or Symbolic scores. Selection applies only to Symbolic discovery and is separate from final user selection.",
     "저장된 규칙×행 위반을 집계합니다. 통합·혼합 결과는 저장 표본 제한이 적용될 수 있으며 전체 원본 위반 건수와 다를 수 있습니다. 점수가 없는 위반은 평균 점수에서 제외합니다.": "Counts persisted rule-by-row violations. Integrated/mixed results may have a storage sample limit and differ from full-source violation counts. Violations without scores are excluded from average scores.",
-    "본 보고서는 IN-DEPS 시스템에서 제공합니다.": "This report is provided by the IN-DEPS system.",
+    "본 보고서는 IN-EDITAONE 시스템에서 제공합니다.": "This report is provided by the IN-EDITAONE system.",
     "기본형 보고서 통합본": "All Basic Reports",
     "선택한 동일 기준으로 생성한 고정 21종 기본형 보고서를 한 번에 제공합니다.": "Provides all 21 fixed Basic Reports generated from the same selected basis.",
     "아직 실행·에디팅 이력이 없습니다.": "No execution or editing history is available yet.",
@@ -175,7 +175,7 @@ REPORT_UI_TEXT = {
         "generatedAt": "생성 시각", "status": "상태", "definitions": "산정 기준 및 용어",
         "noData": "표시할 데이터가 없습니다.", "numerator": "분자", "denominator": "분모",
         "toc": "보고서 목차", "tocSheet": "목차", "backToToc": "목차로 돌아가기", "generationStatus": "생성 상태",
-        "basicReport": "IN-DEPS 기본형 보고서", "basicReportBundle": "IN-DEPS 기본형 보고서 통합본",
+        "basicReport": "IN-EDITAONE 기본형 보고서", "basicReportBundle": "IN-EDITAONE 기본형 보고서 통합본",
         "summary": "요약", "detail": "상세", "metadata": "메타정보", "calculationBasis": "산정 기준",
         "reportCode": "보고서 코드", "providerStatement": "제공 문구", "providerSystem": "제공 시스템",
         "schemaVersion": "스키마 버전", "availabilityStatus": "가용 상태", "availabilityReason": "가용 사유",
@@ -192,7 +192,7 @@ REPORT_UI_TEXT = {
         "generatedAt": "Generated at", "status": "Status", "definitions": "Calculation basis and terms",
         "noData": "No data to display.", "numerator": "Numerator", "denominator": "Denominator",
         "toc": "Table of contents", "tocSheet": "Contents", "backToToc": "Back to table of contents", "generationStatus": "Generation status",
-        "basicReport": "IN-DEPS Basic Report", "basicReportBundle": "All IN-DEPS Basic Reports",
+        "basicReport": "IN-EDITAONE Basic Report", "basicReportBundle": "All IN-EDITAONE Basic Reports",
         "summary": "Summary", "detail": "Details", "metadata": "Metadata", "calculationBasis": "Calculation basis",
         "reportCode": "Report code", "providerStatement": "Provider statement", "providerSystem": "Provider system",
         "schemaVersion": "Schema version", "availabilityStatus": "Availability status", "availabilityReason": "Availability reason",
@@ -254,7 +254,7 @@ def localize_report_document(document: dict[str, Any], language: str) -> dict[st
 
     provider = result.get("provider") or {}
     if isinstance(provider, dict):
-        provider["statement"] = TEXT_EN["본 보고서는 IN-DEPS 시스템에서 제공합니다."]
+        provider["statement"] = TEXT_EN["본 보고서는 IN-EDITAONE 시스템에서 제공합니다."]
 
     bundle = result.get("bundle")
     if isinstance(bundle, dict):

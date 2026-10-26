@@ -757,7 +757,7 @@
         state.controller = new AbortController();
         document.body.classList.add("is-home-system-help");
         document.documentElement.dataset.menuCode = "home";
-        document.title = `${page.title} ${ui?.helpWord || "Help"} - INIT Data Editing System`;
+        document.title = `${page.title} ${ui?.helpWord || "Help"} - IN-EDITAONE`;
         renderHero(page);
 
         const main = document.getElementById("helpMain");

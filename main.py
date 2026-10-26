@@ -28,7 +28,7 @@ from backend.services.edit_work_router import create_edit_work_router
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Data Editing System API")
+app = FastAPI(title="IN-EDITAONE API")
 
 
 class _GeminiRequestBodyLimitMiddleware:

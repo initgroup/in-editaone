@@ -6481,7 +6481,7 @@ body.intro-mode #container-intro .env-panel {
 }
 
 .content-header {
-    height: 64px !important;
+    height: auto !important;
     min-height: 64px !important;
     padding: 6px 24px !important;
     gap: 8px 16px;
@@ -6493,12 +6493,11 @@ body.intro-mode #container-intro .env-panel {
 
 .content-header #contentTitle {
     flex: 0 1 auto;
-    min-width: 180px;
+    min-width: 0;
     max-width: min(56vw, 620px);
-    line-height: 1.05 !important;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.25 !important;
+    overflow-wrap: anywhere;
+    white-space: normal;
 }
 
 .content-title-block {
@@ -6508,13 +6507,13 @@ body.intro-mode #container-intro .env-panel {
     align-items: center;
     justify-content: flex-start;
     gap: 18px;
-    height: 52px;
-    overflow: hidden;
+    height: auto;
+    min-height: 50px;
 }
 
 .content-header-meta {
     flex: 1 1 auto;
-    min-width: 120px;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -6734,7 +6733,7 @@ body.intro-mode #container-intro .env-panel {
     body:not(.intro-mode) .content-header {
         align-items: center !important;
         flex-wrap: nowrap;
-        height: 64px !important;
+        height: auto !important;
         min-height: 64px !important;
         overflow: hidden;
         padding: 6px 12px !important;
@@ -6744,19 +6743,12 @@ body.intro-mode #container-intro .env-panel {
         align-items: center;
         flex: 1 1 190px;
         gap: 10px;
-        height: 52px;
-        min-height: 0;
-        overflow: hidden;
+        height: auto;
+        min-height: 50px;
     }
 
     body:not(.intro-mode) .content-header #contentTitle {
-        line-height: 1.05 !important;
         max-width: 100%;
-        min-width: 0;
-        overflow: hidden;
-        overflow-wrap: anywhere;
-        text-overflow: ellipsis;
-        white-space: nowrap;
     }
 
     body:not(.intro-mode) .content-header #contentTitle::before {

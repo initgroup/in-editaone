@@ -9,7 +9,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-REPORT_FONT_FAMILY = "IN-DEPS Noto Sans KR"
+REPORT_FONT_FAMILY = "IN-EDITAONE Noto Sans KR"
 _ROOT_DIR = Path(__file__).resolve().parents[2]
 _FONT_PACKAGE_DIR = _ROOT_DIR / "node_modules" / "@fontsource-variable" / "noto-sans-kr"
 _FONT_CSS_FILE = _FONT_PACKAGE_DIR / "index.css"

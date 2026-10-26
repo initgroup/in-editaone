@@ -1121,7 +1121,7 @@ def render_custom_preview_html(preview: dict[str, Any], *, embed_fonts: bool = F
 <body>
   <main class="document">
     <section class="cover">
-      <header class="document-header"><div class="brand">{_escape(provider.get("name") or "IN-DEPS")}</div><h1>{_escape(template.get("name") or labels["customReport"])}</h1><p class="provider">{_escape(provider.get("statement"))}</p></header>
+      <header class="document-header"><div class="brand">{_escape(provider.get("name") or "IN-EDITAONE")}</div><h1>{_escape(template.get("name") or labels["customReport"])}</h1><p class="provider">{_escape(provider.get("statement"))}</p></header>
       <section class="meta">
         <div><span>{_escape(labels["project"])}</span>{_escape(project_name)}</div><div><span>{_escape(labels["scenario"])}</span>{_escape(scenario_name)}</div>
         <div><span>{_escape(labels["flowRunId"])}</span>{_escape(selection.get("flowRunId"))}</div><div><span>{_escape(labels["editingSessionId"])}</span>{_escape(selection.get("editSessionId"))}</div>

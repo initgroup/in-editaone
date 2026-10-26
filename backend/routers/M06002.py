@@ -82,7 +82,7 @@ def _download_headers(file_name: str) -> dict[str, str]:
         extension = "bin"
     return {
         "Content-Disposition": (
-            f'attachment; filename="IN-DEPS-Custom-Reports.{extension}"; '
+            f'attachment; filename="IN-EDITAONE-Custom-Reports.{extension}"; '
             f"filename*=UTF-8''{quote(file_name)}"
         ),
         "Cache-Control": "private, no-store",
@@ -269,7 +269,7 @@ def download_saved_template(
         media_type = "text/html; charset=utf-8" if format == "html" else "application/pdf"
         template = preview.get("template") or {}
         file_name = safe_report_filename(
-            f"IN-DEPS_CUSTOM_REPORTS_{template.get('name') or template_id}"
+            f"IN-EDITAONE_CUSTOM_REPORTS_{template.get('name') or template_id}"
         )
         return Response(
             content=content,

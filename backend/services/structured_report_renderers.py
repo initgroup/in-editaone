@@ -259,7 +259,7 @@ def render_report_html(document: dict[str, Any], *, embed_fonts: bool = False) -
   <main class="page">
     <header class="brand">
       <div>
-        <div class="brand-name">{_escape(provider.get('name') or 'IN-DEPS')}</div>
+        <div class="brand-name">{_escape(provider.get('name') or 'IN-EDITAONE')}</div>
         <h1>{_escape(report.get('title'))}</h1>
         <p class="provider-statement">{_escape(provider.get('statement'))}</p>
       </div>
@@ -514,7 +514,7 @@ def render_report_bundle_html(document: dict[str, Any], *, embed_fonts: bool = F
 <body>
   <main class="page">
     <header class="bundle-header">
-      <div class="brand-name">{_escape(provider.get('name') or 'IN-DEPS')}</div>
+      <div class="brand-name">{_escape(provider.get('name') or 'IN-EDITAONE')}</div>
       <h1>{_escape(bundle.get('title') or labels['basicReportBundle'])}</h1>
       <p class="bundle-description">{_escape(bundle.get('description'))}</p>
       <p class="provider-statement">{_escape(provider.get('statement'))}</p>

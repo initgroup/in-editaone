@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+cd "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Keep the browser binary inside the deployed build instead of relying on a
 # machine-local Playwright cache that might not be present at runtime.
@@ -24,7 +25,7 @@ cleanup_pdf_smoke() {
     rm -f "${pdf_smoke_file}"
 }
 trap cleanup_pdf_smoke EXIT
-printf '<!doctype html><html><body><h1>IN-DEPS PDF smoke test</h1></body></html>' \
+printf '<!doctype html><html><body><h1>IN-EDITAONE PDF smoke test</h1></body></html>' \
     | node scripts/render_report_pdf.mjs > "${pdf_smoke_file}"
 if [[ "$(head -c 5 "${pdf_smoke_file}")" != "%PDF-" ]]; then
     echo "Playwright Chromium PDF smoke test failed." >&2
