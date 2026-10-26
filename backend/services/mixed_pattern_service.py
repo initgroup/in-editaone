@@ -18,6 +18,16 @@ VIOLATION_TABLE = "INIT$_TB_RULEVIOL_ASSOC"
 REQUIRED_FIELDS = {"CONDITION_JSON", "RESULT_JSON", "VALIDATION_JSON", "RESULT_KIND", "VIOLATION_COUNT"}
 
 
+def _boolean_option(payload, name, default=False):
+    value = xai._value(payload, name, default)
+    normalized = str(value).strip().lower()
+    if normalized in {"true", "y", "1"}:
+        return True
+    if normalized in {"false", "n", "0"}:
+        return False
+    raise HTTPException(400, f"{name} must be true or false.")
+
+
 def require_schema(cursor):
     xai.require_schema(cursor)
     xai._execute(cursor, "PATTERN_SCHEMA_CHECK")
@@ -127,7 +137,8 @@ def discover(conn, payload):
             "continuousEnabled": str(xai._value(payload, "continuousEnabled", "true")).strip().lower() not in {"false", "n", "0"},
             "maxContinuousTargets": xai._number(payload, "maxContinuousTargets", 16, 1, 32, integer=True),
             "maxContinuousRules": xai._number(payload, "maxContinuousRules", 32, 1, 128, integer=True),
-            "maxFormulaFeatures": xai._number(payload, "maxFormulaFeatures", 3, 1, 4, integer=True),
+            "maxFormulaFeatures": xai._number(payload, "maxFormulaFeatures", 3, 1, 8, integer=True),
+            "formulaSqrtEnabled": _boolean_option(payload, "formulaSqrtEnabled"),
             "minFormulaConfidence": xai._number(payload, "minFormulaConfidence", .95, .5, 1),
             "minFormulaValidationConfidence": xai._number(payload, "minFormulaValidationConfidence", .90, .5, 1),
             "minFormulaR2": xai._number(payload, "minFormulaR2", .90, .5, .99999),

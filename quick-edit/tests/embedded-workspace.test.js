@@ -7,13 +7,15 @@ const { chromium } = require("playwright");
 const root = path.resolve(__dirname, "../..");
 const origin = "http://embedded-workspace.test";
 
-async function openShell(width = 1440, language = "ko", completed = false) {
+async function openShell(width = 1440, language = "ko", completed = false, simple = false, realPopup = false) {
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage({ viewport: { width, height: 980 } });
     const calls = [], errors = [];
     const serverSession = { userId: 7, targetConnectionId: 1 };
     page.on("pageerror", (error) => errors.push(error.message));
-    await page.addInitScript(({ language, completed }) => {
+    const context = page.context();
+    if (realPopup) await context.addCookies([{name: "init_session_v2", value: "verified-demo-fixture", domain: "embedded-workspace.test", path: "/", httpOnly: true, sameSite: "Lax"}]);
+    await context.addInitScript(({ language, completed, realPopup }) => {
         if (!sessionStorage.getItem("workspaceFixture")) {
             sessionStorage.setItem("initLoginUser", JSON.stringify({ userId: 7, userName: "Review User", roleCode: "ADMIN" }));
             sessionStorage.setItem("initLanguageCode", language);
@@ -29,15 +31,17 @@ async function openShell(width = 1440, language = "ko", completed = false) {
             }));
         }
         window.popupCalls = [];
-        window.open = (...args) => { window.popupCalls.push(args); return null; };
-    }, { language, completed });
-    await page.route("**/*", async (route) => {
+        if (!realPopup) window.open = (...args) => { window.popupCalls.push(args); return null; };
+    }, { language, completed, realPopup });
+    await context.route("**/*", async (route) => {
         const url = new URL(route.request().url());
         if (url.origin !== origin) return route.fulfill({ status: 404, body: "" });
         if (url.pathname.startsWith("/api/")) {
-            calls.push({ path: url.pathname, method: route.request().method() });
+            const headers = await route.request().allHeaders();
+            calls.push({ path: url.pathname, method: route.request().method(), cookie: headers.cookie });
+            if (realPopup && url.pathname.startsWith("/api/M00002/") && !headers.cookie?.includes("init_session_v2=verified-demo-fixture")) return route.fulfill({status:401,json:{detail:"Login session is required."}});
             let data = { status: "success", data: [] };
-            if (url.pathname.endsWith("/session/me")) data = { status: "success", targetConnectionId: serverSession.targetConnectionId,
+            if (url.pathname.endsWith("/session/me") || url.pathname === "/api/M00002/session") data = { status: "success", targetConnectionId: serverSession.targetConnectionId,
                 connection: { connectionName: serverSession.targetConnectionId === 1 ? "Review Target DB" : "Changed Target DB" },
                 user: { userId: serverSession.userId, userName: "Review User", roleCode: "ADMIN" }, sessionTtlSeconds: 3600 };
             if (url.pathname.endsWith("/snapshot")) data = { status: "success", data: { run: { STATUS: "SUCCESS" }, nodes: [] } };
@@ -47,14 +51,16 @@ async function openShell(width = 1440, language = "ko", completed = false) {
             if (url.pathname.endsWith("/editing-results")) data = { status: "success", data: {
                 family: url.searchParams.get("family") || "CONDITION", total: 0, page: 1, pageSize: 20, rules: [],
                 summary: { families: { CONDITION: { total: 0 }, FORMULA: { total: 0 } }, sourceCounts: [], historicalExplanationCount: 0 }, diagnostics: {} } };
+            if (url.pathname === "/api/M00002/preflight") data = {status:"success",data:{sourceRows:2400,sampleRows:2400,columns:8}};
+            if (url.pathname === "/api/M00002/analyze") data = {status:"success",data:{sourceRows:2400,sampleRows:2400,elapsedSeconds:1,rules:{FORMULA:[{id:"f1",kind:"FORMULA",result:"결제금액 ≈ 상품금액 - 할인금액",condition:"상품금액 값 있음",validationConfidence:1,validationRows:600,supportRows:1350}],CONDITION:[]}}};
             return route.fulfill({ json: data, headers: { "X-INIT-Session-TTL-Seconds": "3600" } });
         }
         // Other main pages are boundary fixtures; the shell, PageManager, menu,
         // translation engine, styles, M00001 and its Quick Editing child are real.
-        if (url.pathname === "/pages/home.html") return route.fulfill({ contentType: "text/html", body: '<div id="container-home"><h1>Main Home</h1></div>' });
+        if (url.pathname === "/pages/home.html" && !simple) return route.fulfill({ contentType: "text/html", body: '<div id="container-home"><h1>Main Home</h1></div>' });
         if (url.pathname === "/js/home.js") return route.fulfill({ contentType: "application/javascript", body: "window.home={init(){}};" });
         let local = url.pathname === "/" ? path.join(root, "frontend/index.html")
-            : url.pathname.startsWith("/quick-edit/") ? path.join(root, url.pathname.slice(1), url.pathname.endsWith("/") ? "index.html" : "")
+            : /^\/(quick-edit|simple-edit)\//.test(url.pathname) ? path.join(root, url.pathname.slice(1), url.pathname.endsWith("/") ? "index.html" : "")
                 : path.join(root, "frontend", url.pathname);
         if (!local.startsWith(root + path.sep) || !fs.existsSync(local) || !fs.statSync(local).isFile()) return route.fulfill({ status: 404, body: "" });
         const mime = { ".html": "text/html", ".js": "application/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml", ".woff2": "font/woff2" }[path.extname(local)] || "application/octet-stream";
@@ -63,6 +69,25 @@ async function openShell(width = 1440, language = "ko", completed = false) {
     try {
         await page.goto(origin + "/?page=home");
         await page.waitForFunction(() => window.PageManager?.readyPages.has("home"));
+        if (simple) {
+            if (realPopup) {
+                const opened = page.waitForEvent("popup").catch(() => null);
+                await page.locator(".simple-edit-launcher").click();
+                assert.deepEqual(errors, [], "The demo launcher must not throw before opening its window");
+                const popup = await opened;
+                assert.ok(popup, "Demo popup should open from a direct user click");
+                popup.on("pageerror", error => errors.push(error.message));
+                await popup.locator("#se-session[data-state=connected]").waitFor({timeout:8000}).catch(async error => {
+                    throw new Error(`${error.message}; popup=${popup.url()}; state=${await popup.locator("#se-session").textContent().catch(() => "missing")}; errors=${JSON.stringify(errors)}; requests=${JSON.stringify(calls.map(call => ({path:call.path,cookie:Boolean(call.cookie)})))}`);
+                });
+                return {browser, page, popup, calls, errors, serverSession};
+            }
+            await page.evaluate(() => openSimpleEditWindow());
+            await page.waitForFunction(() => window.PageManager?.readyPages.has("M00002"));
+            await page.waitForFunction(() => document.querySelector("#simpleEditFrame-M00002")?.contentWindow?.SimpleEditing);
+            const frame = page.frames().find(item => item.url().includes("/simple-edit/"));
+            return {browser, page, frame, calls, errors, serverSession};
+        }
         await page.evaluate(() => document.querySelector('#mainNav [data-page="M00001"]').click());
         await page.waitForFunction(() => window.PageManager?.readyPages.has("M00001"));
         await page.waitForFunction(() => document.querySelector("#quickEditFrame-M00001")?.contentWindow?.location.pathname === "/quick-edit/");
@@ -76,10 +101,99 @@ async function openShell(width = 1440, language = "ko", completed = false) {
     }
 }
 
+for (const language of ["ko", "en"]) {
+    test(`demo popup shares the HttpOnly server cookie, refreshes main TTL and reuses the result (${language})`, async () => {
+        const {browser, page, popup, calls, errors} = await openShell(1440, language, false, true, true);
+        try {
+            const url = new URL(popup.url());
+            assert.equal(url.pathname, "/simple-edit/");
+            assert.deepEqual([...url.searchParams.keys()].sort(), ["lang", "v"]);
+            assert.equal(await popup.locator("html").getAttribute("lang"), language);
+            assert.equal(await popup.evaluate(() => document.cookie.includes("init_session_v2")), false);
+            await popup.evaluate(() => sessionStorage.removeItem("initLoginUser"));
+            await page.evaluate(() => sessionStorage.setItem("initLoginExpiresAt", String(Date.now() + 60000)));
+            await popup.evaluate(() => SimpleEditing.onShow());
+            assert.ok(await page.evaluate(() => Number(sessionStorage.getItem("initLoginExpiresAt")) - Date.now() > 3500000));
+            await popup.locator("#se-sample-run").click();
+            await popup.locator("#se-results").waitFor({state:"visible"});
+            assert.ok(calls.filter(call => /\/M00002\/(session|preflight|analyze)$/.test(call.path)).every(call => call.cookie.includes("init_session_v2=verified-demo-fixture")));
+            await popup.evaluate(() => { window.popupSentinel = "keep result"; });
+            await page.locator(".simple-edit-launcher").click();
+            await page.locator(".simple-edit-launcher").click();
+            assert.equal(page.context().pages().length, 2);
+            assert.equal(await popup.evaluate(() => popupSentinel), "keep result");
+            assert.ok(await popup.locator("#se-results").isVisible());
+            assert.equal(await page.locator("#simpleEditFrame-M00002").count(), 0);
+            if (await popup.locator("#se-fullscreen").isVisible()) {
+                await popup.locator("#se-fullscreen").click();
+                await popup.waitForFunction(() => Boolean(document.fullscreenElement));
+                await popup.locator("#se-fullscreen").click();
+                await popup.waitForFunction(() => !document.fullscreenElement);
+            }
+            await popup.close();
+            const opened = page.waitForEvent("popup");
+            await page.locator(".simple-edit-launcher").click();
+            const reopened = await opened;
+            await reopened.locator("#se-session[data-state=connected]").waitFor();
+            await reopened.locator("#se-sample-run").click();
+            await reopened.locator("#se-results").waitFor({state:"visible"});
+            await page.context().clearCookies();
+            await reopened.evaluate(() => SimpleEditing.onShow());
+            assert.equal(await reopened.locator("#se-session").getAttribute("data-state"), "expired");
+            assert.equal(await reopened.locator(".se-rule-card").count(), 0);
+            assert.ok(await reopened.locator("#se-run").isDisabled());
+            assert.deepEqual(errors, []);
+        } finally { await browser.close(); }
+    });
+}
+
+for (const width of [390, 1440]) {
+    test(`Key Rules stays off the menu and opens from its icon (${width}px)`, async () => {
+        const {browser, page, frame, errors} = await openShell(width, "ko", false, true);
+        try {
+            assert.equal(await page.locator('#mainNav [data-page="M00002"]').count(), 0);
+            assert.equal(await page.evaluate(() => PageManager.isPageAllowed("M00002")), true);
+            const simple = page.locator(".simple-edit-launcher"), quick = page.locator(".quick-edit-launcher");
+            assert.equal(await page.locator(".simple-edit-launcher-label").count(), 0);
+            assert.equal((await simple.textContent()).trim(), "ƒ");
+            assert.match(await simple.getAttribute("title"), /^핵심 규칙 찾기\n같은 혼합형 분석/);
+            assert.match(await quick.getAttribute("title"), /^규칙 분석·데이터 편집\n/);
+            assert.equal(await simple.getAttribute("aria-label"), "핵심 규칙 찾기");
+            assert.equal(await quick.getAttribute("aria-label"), "규칙 분석·데이터 편집");
+            if (!await simple.isVisible()) await page.locator("#mobileTopToolbarToggle").click();
+            const simpleBox = await simple.boundingBox(), quickBox = await quick.boundingBox();
+            assert.ok(Math.abs(simpleBox.width - quickBox.width) < 1);
+            assert.ok(Math.abs(simpleBox.height - quickBox.height) < 1);
+            assert.ok(simpleBox.width >= 38 && simpleBox.width <= 40);
+            await page.evaluate(() => I18nManager.applyLanguage("en"));
+            assert.equal(await simple.getAttribute("aria-label"), "Find key rules");
+            assert.match(await quick.getAttribute("title"), /^Analyze rules and edit data/);
+            assert.equal((await simple.textContent()).trim(), "ƒ");
+            await page.evaluate(() => I18nManager.applyLanguage("ko"));
+            assert.equal(await simple.getAttribute("aria-label"), "핵심 규칙 찾기");
+            assert.equal(await quick.getAttribute("aria-label"), "규칙 분석·데이터 편집");
+            assert.match(await frame.title(), /핵심 규칙 찾기/);
+            assert.equal(await page.locator('#mainNav [data-page="M00001"]').count(), 1);
+            const box = await page.locator("#simpleEditFrame-M00002").boundingBox();
+            assert.ok(box.width > 280 && box.height >= 540);
+            assert.ok(box.x >= 0 && box.x + box.width <= width + 1);
+            assert.ok(await frame.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+            await page.evaluate(() => PageManager.load("home", "Home"));
+            assert.equal(await page.locator(".home-simple-edit").count(), 0);
+            assert.ok(await page.locator(".home-hero-panel").isVisible());
+            await page.screenshot({path: path.join(root, `.runtime/rule-discovery-home-${width}.png`)});
+            await page.evaluate(() => openSimpleEditWindow());
+            assert.equal(await page.locator("#simpleEditFrame-M00002").count(), 1);
+            assert.equal(await page.evaluate(() => popupCalls.length), 2);
+            assert.deepEqual(errors, []);
+        } finally { await browser.close(); }
+    });
+}
+
 test("main menu and header share a cached Quick Editing page with close/refresh/Target DB guards", async () => {
     const { browser, page, frame, calls, errors } = await openShell();
     try {
-        assert.deepEqual(await page.evaluate(() => MENU_CONFIG.slice(0, 2).map((item) => item.page)), ["home", "M00001"]);
+        assert.deepEqual(await page.evaluate(() => MENU_CONFIG.slice(0, 3).map((item) => item.page)), ["home", "M00002", "M00001"]);
         assert.equal(await page.locator('#mainNav [data-page="M00001"]').innerText(), "퀵 에디팅");
         assert.equal(await page.locator("#quickEditFrame-M00001").getAttribute("title"), "퀵 에디팅");
         await frame.evaluate(() => { window.cacheSentinel = "same execution"; });

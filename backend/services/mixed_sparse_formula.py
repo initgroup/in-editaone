@@ -1,7 +1,7 @@
 """Bounded TRAIN_FIT-only screening of sparse unit-coefficient identities.
 
 Pair screening uses a shared small Gram matrix rather than fitting every pair.
-Only a fixed-width beam expands to three/four terms; the returned candidates must
+Only a fixed-width beam expands to at most eight terms; the returned candidates must
 still pass full fitting, separate tolerance calibration and validation elsewhere.
 """
 from __future__ import annotations
@@ -47,17 +47,21 @@ class UnitFormulaScreen:
         cross = self.gram[np.ix_(indices, indices)]
         return float(self.gram[target, target] - 2 * self.gram[target, list(indices)] @ signs + signs @ cross @ signs)
 
-    def pairs(self, target_name):
-        if target_name in self._pairs:
-            return self._pairs[target_name]
+    def pairs(self, target_name, excluded=()):
+        cache_key = (target_name, tuple(sorted(excluded)))
+        if cache_key in self._pairs:
+            return self._pairs[cache_key]
         target = self.names.index(target_name)
         diagonal = np.diag(self.gram)
         upper = np.triu(np.ones(self.gram.shape, dtype=bool), 1)
         upper[target, :] = False
         upper[:, target] = False
+        for index in excluded:
+            upper[index, :] = False
+            upper[:, index] = False
         first, second = np.where(upper)
         if not len(first):
-            self._pairs[target_name] = []
+            self._pairs[cache_key] = []
             return []
         gram_choices = [self.gram]
         actual = self.values[:, target]
@@ -89,20 +93,22 @@ class UnitFormulaScreen:
         denominator = np.sqrt(np.maximum(diagonal, 1e-300)) * max(float(np.sqrt(diagonal[target])), 1e-150)
         correlations = np.abs(gram_choices[-1][target]) / denominator
         correlations[target] = -1
-        anchors = np.argsort(correlations)[-min(4, len(self.names) - 1):]
+        for index in excluded:
+            correlations[index] = -1
+        anchors = np.argsort(correlations)[-min(4, len(self.names) - 1 - len(excluded)):]
         for anchor in anchors:
             for anchor_sign in (1, -1):
                 residual = self.centered[:, target] - anchor_sign * self.centered[:, anchor]
                 for other_sign in (1, -1):
                     errors = np.mean((residual[:, None] - other_sign * self.centered) ** 2, axis=0)
-                    errors[[target, anchor]] = np.inf
-                    count = min(3, len(self.names) - 2)
+                    errors[[target, anchor, *excluded]] = np.inf
+                    count = min(3, len(self.names) - 2 - len(excluded))
                     if count:
                         for other in np.argpartition(errors, count - 1)[:count]:
                             shortlisted.add(tuple(sorted(((int(anchor), anchor_sign), (int(other), other_sign)))))
         candidates = [(self._error(target, terms), terms) for terms in shortlisted]
         candidates.sort(key=lambda item: (item[0], item[1]))
-        self._pairs[target_name] = candidates
+        self._pairs[cache_key] = candidates
         return candidates
 
     def priority(self, target_name):
@@ -113,13 +119,31 @@ class UnitFormulaScreen:
         if max_terms < 2:
             return []
         target = self.names.index(target_name)
-        pairs = self.pairs(target_name)
+        all_candidates = self._expand(target, self.pairs(target_name), max_terms)
+        if max_terms > 4:
+            # A near-copy can monopolize every short beam before the actual
+            # components form a longer sum. Keep the original search and one
+            # bounded alternative without those TRAIN_FIT-only proxy anchors.
+            proxies = sorted((min(self._error(target, ((index, 1),)), self._error(target, ((index, -1),))), index)
+                             for index in range(len(self.names)) if index != target)
+            excluded = tuple(index for error, index in proxies[:4] if error <= .1)
+            if excluded and len(self.names) - len(excluded) >= 3:
+                all_candidates.extend(self._expand(target, self.pairs(target_name, excluded), max_terms, excluded))
+        all_candidates.sort(key=lambda item: (item[0], len(item[1]), item[1]))
+        unique = {}
+        for error, terms in all_candidates:
+            if terms not in unique and np.isfinite(error) and error <= .2:
+                unique[terms] = {"names": [self.names[index] for index, _ in terms],
+                                 "coefficients": [sign for _, sign in terms], "screenError": error}
+        return list(unique.values())[:UNIT_CANDIDATE_LIMIT]
+
+    def _expand(self, target, pairs, max_terms, excluded=()):
         all_candidates = list(pairs)
         beam = pairs[:UNIT_BEAM_WIDTH]
-        for _size in range(3, min(max_terms, 4) + 1):
+        for _size in range(3, min(max_terms, 8) + 1):
             expanded = {}
             for _, terms in beam:
-                used = {target, *(index for index, _ in terms)}
+                used = {target, *excluded, *(index for index, _ in terms)}
                 indices, signs = zip(*terms)
                 baseline = self._quadratic_error(target, terms)
                 for sign in (1, -1):
@@ -136,7 +160,4 @@ class UnitFormulaScreen:
             short_list = sorted(expanded, key=expanded.get)[:UNIT_BEAM_WIDTH * 3]
             beam = sorted(((self._error(target, terms), terms) for terms in short_list), key=lambda item: (item[0], item[1]))[:UNIT_BEAM_WIDTH]
             all_candidates.extend(beam)
-        all_candidates.sort(key=lambda item: (item[0], len(item[1]), item[1]))
-        return [{"names": [self.names[index] for index, _ in terms],
-                 "coefficients": [sign for _, sign in terms], "screenError": error}
-                for error, terms in all_candidates[:UNIT_CANDIDATE_LIMIT] if np.isfinite(error) and error <= .2]
+        return all_candidates

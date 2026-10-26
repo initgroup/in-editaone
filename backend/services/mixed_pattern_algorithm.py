@@ -64,9 +64,15 @@ def evaluate_pattern_predicate(predicate: dict, row: dict) -> bool:
             return (actual is None) if operator == "IS_NULL" else (actual is not None)
         if actual is None:
             return False
+        if predicate.get("valueType") == "BINARY_FLOAT":
+            # Match the tree's float32 comparisons and persisted Oracle CAST.
+            # Values outside float32's finite range keep their signed ordering.
+            with np.errstate(over="ignore", invalid="ignore"):
+                actual = float(np.float32(actual))
         expected = _decimal(predicate["value"])
         return {"=": actual == expected, "!=": actual != expected,
-                "<=": actual <= expected, ">": actual > expected}[operator]
+                "<": actual < expected, "<=": actual <= expected,
+                ">": actual > expected, ">=": actual >= expected}[operator]
     if predicate.get("valueType") != "NUMBER" or operator in {"IS_NULL", "NOT_NULL"}:
         return evaluate_predicate(predicate, row)
     value = row.get(predicate["column"])
@@ -213,8 +219,13 @@ def analyze_pattern_rows(rows: list[dict], columns: list[dict], options: dict | 
     for alias, canonical in (("maxDepth", "treeMaxDepth"), ("minSamplesLeaf", "minLeafCount"), ("randomState", "randomSeed")):
         if alias in options and canonical not in options:
             options[canonical] = options[alias]
-    if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows) or len(rows) < 32:
-        raise ValueError("Pattern discovery requires at least 32 row objects")
+    if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
+        raise ValueError("rows must be a list of row objects")
+    if len(rows) < 32:
+        raise ValueError(
+            f"Pattern discovery requires at least 32 data rows after excluding the header; received {len(rows)}. "
+            "Provide more actual data rows; additional header rows do not count as data."
+        )
     if not isinstance(columns, list) or not columns or not all(isinstance(column, dict) for column in columns):
         raise ValueError("columns must contain physical Oracle metadata")
     metadata = _column_metadata(columns)
@@ -252,13 +263,17 @@ def analyze_pattern_rows(rows: list[dict], columns: list[dict], options: dict | 
     min_leaf = _option(options, "min_leaf_count", "minLeafCount", max(3, min_condition), 2, 10000, True)
     targets, excluded_targets, excluded_features = [], [], []
     excluded_names = set(excluded_option)
+    from backend.services.mixed_pattern_encoding import condition_numeric_views, annotate_numeric_text
+    text_category_limit = _option(options, "max_categories", "maxCategories", 32, 2, 128, True)
+    target_rows, feature_rows, condition_metadata, numeric_text, numeric_inference = condition_numeric_views(
+        sample, metadata, train_indices, category_limit=max(category_limit, text_category_limit), excluded=excluded_names)
     # Training data alone decides whether an apparent row number is a feature.
-    for column in metadata:
+    for column in condition_metadata:
         name, numeric = column["name"], column["dataType"] in _NUMERIC_TYPES
         if name in excluded_names or column["dataType"] not in _NUMERIC_TYPES | _TEXT_TYPES:
             excluded_targets.append({"column": name, "reason": "USER_EXCLUDED" if name in excluded_names else "UNSUPPORTED_PHYSICAL_TYPE"})
             continue
-        target, reason = _target_encoding(sample, name, numeric, train_indices, category_limit, bins)
+        target, reason = _target_encoding(target_rows, name, numeric, train_indices, category_limit, bins)
         if reason == "IDENTIFIER_LIKE":
             excluded_names.add(name)
             excluded_features.append({"column": name, "reason": reason})
@@ -269,20 +284,33 @@ def analyze_pattern_rows(rows: list[dict], columns: list[dict], options: dict | 
         elif len(targets) >= max_targets:
             excluded_targets.append({"column": name, "reason": "TARGET_LIMIT"})
         else:
+            if name in numeric_text:
+                for result in target["results"]:
+                    result["resultPredicate"] = annotate_numeric_text(result["resultPredicate"], numeric_text)
             targets.append((name, target))
     encoding_options = dict(options, excludeColumns=sorted(excluded_names))
     encoding_options.pop("exclude_columns", None)
     try:
-        matrix, features, encoding = _fit_encoding(sample, metadata, train_indices, encoding_options)
+        matrix, features, encoding = _fit_encoding(feature_rows, condition_metadata, train_indices, encoding_options)
     except ValueError as exc:
         if not str(exc).startswith("No usable features remain"):
             raise
         matrix, features = None, []
         encoding = {"features": [], "excludedColumns": excluded_features, "sourceColumnCount": len(metadata), "encodedFeatureCount": 0, "fitSource": "TRAIN_ONLY"}
+    # The target labels and sparse encoder are now fixed. Release temporary
+    # Decimal/float views before formula discovery allocates its numeric arrays.
+    del target_rows, feature_rows, condition_metadata
     encoding["targetEncodings"] = [{"column": name, **{key: value for key, value in target.items() if key not in {"labels", "results"}}} for name, target in targets]
     encoding["excludedTargets"] = excluded_targets
     encoding["targetFeaturePolicy"] = "EXCLUDE_ALL_FEATURES_DERIVED_FROM_CURRENT_TARGET"
+    encoding["numericTextInference"] = numeric_inference
+    physical_types = {column["name"]: column["dataType"] for column in metadata}
+    for feature in encoding["features"]:
+        if feature["column"] in numeric_text:
+            feature.update(physicalType=physical_types[feature["column"]], encoding="NUMERIC_TEXT_MEDIAN_WITH_MISSING_FLAG", numericText=True)
     rules, fitted_targets, rejected = [], [], {"trainEvidence": 0, "validationEvidence": 0}
+    from backend.services.mixed_unary_patterns import SparseUnaryPatterns, select_condition_patterns
+    unary = SparseUnaryPatterns(matrix, features, train_indices, validation_indices, min_condition, max_rules)
     for name, target in targets:
         feature_indices = [index for index, feature in enumerate(features) if feature["column"] != name]
         labels = target["labels"]
@@ -297,6 +325,42 @@ def analyze_pattern_rows(rows: list[dict], columns: list[dict], options: dict | 
         leaves = tree.apply(target_matrix)
         fitted_targets.append(name)
 
+        train_result_counts = np.bincount(labels[train_indices][labels[train_indices] >= 0], minlength=target["classCount"])
+        validation_result_counts = np.bincount(labels[validation_indices][labels[validation_indices] >= 0], minlength=target["classCount"])
+
+        def accept(predicate, expected_class, condition_count, support_count, validation_count, validation_support, node, method):
+            result_count = int(train_result_counts[expected_class])
+            confidence = support_count / condition_count if condition_count else 0.
+            baseline = result_count / len(train_indices)
+            lift = confidence / baseline if baseline else 0.
+            if condition_count < min_condition or confidence < min_confidence or confidence - baseline < min_gain or lift < min_lift:
+                rejected["trainEvidence"] += 1
+                return
+            validation_result = int(validation_result_counts[expected_class])
+            validation_rate = validation_support / validation_count if validation_count else 0.
+            validation_baseline = validation_result / len(validation_indices)
+            validation_lift = validation_rate / validation_baseline if validation_baseline else 0.
+            if validation_count < minimum_validation or validation_rate < validation_confidence or validation_rate - validation_baseline < min_gain or validation_lift < min_lift:
+                rejected["validationEvidence"] += 1
+                return
+            predicate = annotate_numeric_text(predicate, numeric_text)
+            consequent = target["results"][expected_class]
+            result_text = pattern_expression(consequent["resultPredicate"])
+            expression = pattern_expression(predicate)
+            digest = hashlib.sha256(json.dumps([predicate, consequent["resultPredicate"]], sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()[:24].upper()
+            validation = {"conditionCount": validation_count, "supportCount": validation_support,
+                          "confidence": validation_rate, "totalCount": len(validation_indices), "resultCount": validation_result,
+                          "support": validation_support / len(validation_indices), "lift": validation_lift,
+                          "status": "VALIDATED", "source": "SELECTION_VALIDATION"}
+            rules.append({"ruleId": f"MIXED_PATTERN_{digest}", "leafId": int(node), "predicate": predicate,
+                          "candidateMethod": method, "expression": expression, "fullText": f"IF {expression} THEN {result_text}",
+                          "resultColumn": name, "resultText": result_text, **consequent,
+                          "supportCount": support_count, "conditionCount": condition_count, "resultCount": result_count,
+                          "totalCount": len(train_indices), "confidence": confidence,
+                          "support": support_count / len(train_indices), "lift": lift, "confidenceGain": confidence - baseline,
+                          "validation": validation, "validationStatus": "VALIDATED", "status": "PATTERN",
+                          "metricMeaning": "OBSERVED_SOURCE_VALUE_FREQUENCY_NOT_ERROR_PROBABILITY"})
+
         def collect(node, path):
             feature_index = tree.tree_.feature[node]
             if feature_index >= 0:
@@ -308,43 +372,18 @@ def analyze_pattern_rows(rows: list[dict], columns: list[dict], options: dict | 
                 return
             expected_class = int(tree.classes_[int(np.argmax(tree.tree_.value[node][0]))])
             train_match, validation_match = train_indices[leaves[train_indices] == node], validation_indices[leaves[validation_indices] == node]
-            support_count = int(np.sum(labels[train_match] == expected_class))
-            result_count = int(np.sum(labels[train_indices] == expected_class))
-            confidence = support_count / len(train_match) if len(train_match) else 0.
-            baseline = result_count / len(train_indices)
-            lift = confidence / baseline if baseline else 0.
-            if len(train_match) < min_condition or confidence < min_confidence or confidence - baseline < min_gain or lift < min_lift:
-                rejected["trainEvidence"] += 1
-                return
-            validation_support = int(np.sum(labels[validation_match] == expected_class))
-            validation_result = int(np.sum(labels[validation_indices] == expected_class))
-            validation_rate = validation_support / len(validation_match) if len(validation_match) else 0.
-            validation_baseline = validation_result / len(validation_indices)
-            validation_lift = validation_rate / validation_baseline if validation_baseline else 0.
-            if len(validation_match) < minimum_validation or validation_rate < validation_confidence or validation_rate - validation_baseline < min_gain or validation_lift < min_lift:
-                rejected["validationEvidence"] += 1
-                return
-            predicate = _group("AND", path)
-            consequent = target["results"][expected_class]
-            result_text = pattern_expression(consequent["resultPredicate"])
-            expression = pattern_expression(predicate)
-            digest = hashlib.sha256(json.dumps([predicate, consequent["resultPredicate"]], sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()[:24].upper()
-            validation = {"conditionCount": len(validation_match), "supportCount": validation_support,
-                          "confidence": validation_rate, "totalCount": len(validation_indices), "resultCount": validation_result,
-                          "support": validation_support / len(validation_indices), "lift": validation_lift,
-                          "status": "VALIDATED", "source": "SELECTION_VALIDATION"}
-            rules.append({"ruleId": f"MIXED_PATTERN_{digest}", "leafId": int(node), "predicate": predicate,
-                          "expression": expression, "fullText": f"IF {expression} THEN {result_text}",
-                          "resultColumn": name, "resultText": result_text, **consequent,
-                          "supportCount": support_count, "conditionCount": len(train_match), "resultCount": result_count,
-                          "totalCount": len(train_indices), "confidence": confidence,
-                          "support": support_count / len(train_indices), "lift": lift, "confidenceGain": confidence - baseline,
-                          "validation": validation, "validationStatus": "VALIDATED", "status": "PATTERN",
-                          "metricMeaning": "OBSERVED_SOURCE_VALUE_FREQUENCY_NOT_ERROR_PROBABILITY"})
+            accept(_group("AND", path), expected_class, len(train_match), int(np.sum(labels[train_match] == expected_class)),
+                   len(validation_match), int(np.sum(labels[validation_match] == expected_class)), node, "COLUMN_TREE")
 
         collect(0, [])
+        for candidate in unary.candidates(name, labels, target["classCount"], min_leaf, min_impurity):
+            accept(_branch_predicate(candidate["feature"], .5, False), candidate["classIndex"],
+                   candidate["conditionCount"], candidate["supportCount"], candidate["validationCount"],
+                   candidate["validationSupport"], -1 - candidate["featureIndex"], "SPARSE_UNARY_FREQUENCY")
+
     # Rank across targets before imposing the global cap so the first column does
     # not consume the entire rule budget. Validation only gates publication.
+    rules = list({rule["ruleId"]: rule for rule in reversed(rules)}.values())
     rules.sort(key=lambda rule: (-rule["confidence"], -rule["supportCount"], -rule["lift"], rule["ruleId"]))
     from backend.services.mixed_continuous_algorithm import discover_continuous_rules
     continuous = discover_continuous_rules(sample, metadata, train_indices, validation_indices,
@@ -354,7 +393,7 @@ def analyze_pattern_rows(rows: list[dict], columns: list[dict], options: dict | 
     # Preserve room for validated numeric formulas rather than allowing simple
     # categorical leaves to consume the entire shared result budget.
     formula_budget = min(len(formula_rules), max(1, max_rules // 2))
-    selected_patterns = rules[:max_rules - formula_budget]
+    selected_patterns = select_condition_patterns(rules, max_rules - formula_budget)
     formula_budget = min(len(formula_rules), max_rules - len(selected_patterns))
     rules = selected_patterns + formula_rules[:formula_budget]
     continuous["metrics"]["publishedRuleCount"] = formula_budget
@@ -380,7 +419,7 @@ def analyze_pattern_rows(rows: list[dict], columns: list[dict], options: dict | 
             "metrics": {"inputCount": len(rows), "sampleCount": len(sample), "trainCount": len(train_indices), "trainRows": len(train_indices),
                         "holdoutCount": len(validation_indices), "holdoutRows": len(validation_indices), "validationRows": len(validation_indices),
                         "ruleCount": len(rules), "candidateRuleCount": uncapped_count, "fittedTargetCount": len(fitted_targets), "fittedTargets": fitted_targets,
-                        "rejectedRules": rejected, "randomSeed": seed, "validationSource": "SELECTION_VALIDATION", "hasGroundTruth": False,
+                        "rejectedRules": rejected, "unaryFrequency": unary.metrics(), "randomSeed": seed, "validationSource": "SELECTION_VALIDATION", "hasGroundTruth": False,
                         "continuous": continuous["metrics"], "formulaRuleCount": sum(rule["resultKind"] == "FORMULA" for rule in rules),
                         "minConfidence": min_confidence, "minValidationConfidence": validation_confidence,
                         "minConditionCount": min_condition, "minValidationCount": minimum_validation, "minLift": min_lift, "minConfidenceGain": min_gain,

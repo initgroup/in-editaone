@@ -208,6 +208,69 @@ class MixedXaiBuiltinProvisioningTests(unittest.TestCase):
         self.assertEqual(json.loads(request.execSpecJson)["endpoint"], "/api/mlAnalysis/custom-profile")
         self.assertFalse(any(sql_id == "DATA_WORK_OML_RESOURCE_MATCH" for sql_id, _ in self.db.reads))
 
+    def test_single_engine_design_inherits_only_mixed_options_and_dispatches_each_stage_once(self):
+        from backend.services import flow_work_service as flows
+        for stage in defaults.UNIFIED_STAGES:
+            self.ensure(stage)
+        source = self.db.stored[2]
+        params = json.loads(source["PARAM_JSON"])
+        changes = {"P_SAMPLE_ROWS":"1234", "P_MIXED_MAX_FORMULA_FEATURES":"6",
+                   "P_MIXED_FORMULA_SQRT_ENABLED":"true", "P_MIXED_CONTINUOUS_ENABLED":"0"}
+        for item in params:
+            if item["itemName"] in changes:
+                item["itemDefault"] = changes[item["itemName"]]
+        params.extend([{"itemName":"P_MIXED_TARGET_OWNER","itemDefault":"OTHER_OWNER"},
+                       {"itemName":"P_MIN_CONFIDENCE","itemDefault":"0.51"}])
+        source["PARAM_JSON"] = json.dumps(params)
+        old = copy.deepcopy(self.db.stored)
+        saved = [defaults.ensure_default_job(self.db, stage, inherit_unified_options=True, **SCOPE)[0]
+                 for stage in defaults.MIXED_XAI_STAGES]
+        self.assertEqual(self.db.stored[:4], old)
+        values = {item["itemName"]: item.get("itemDefault") for item in saved[2]["PARAMS"]}
+        self.assertEqual(values["P_SAMPLE_ROWS"], "1234")
+        self.assertEqual(values["P_MAX_FORMULA_FEATURES"], "6")
+        self.assertEqual(values["P_FORMULA_SQRT_ENABLED"], "true")
+        self.assertEqual(values["P_CONTINUOUS_ENABLED"], "0")
+        self.assertEqual(values["P_MIN_CONFIDENCE"], "0.99")
+        self.assertNotEqual(values["P_TARGET_OWNER"], "OTHER_OWNER")
+        nodes, edges = defaults.build_sample_flow_graph(saved)
+        validation = flows.validate_graph(*flows.normalize_graph(
+            [flows.FlowNodeRequest(**node) for node in nodes], [flows.FlowEdgeRequest(**edge) for edge in edges]))
+        self.assertEqual(validation["status"], "success", validation)
+        self.assertEqual([node["execMethod"] for node in nodes], [stage["modelName"] for stage in defaults.MIXED_XAI_STAGES])
+        runtime = {"INIT$TargetOwner":"APP_OWNER", "INIT$TargetTable":"INITUP$SOURCE",
+                   "INIT$RunSourceType":"FLOW_WORK", "INIT$RunId":721}
+        with ExitStack() as execution:
+            execution.enter_context(patch("backend.services.integrated_editing_service.execute", side_effect=AssertionError("No second engine")))
+            functions = ["backend.services.mixed_analysis_profile_service.profile",
+                         "backend.services.mixed_analysis_profile_service.relationships",
+                         "backend.services.mixed_xai_service.discover", "backend.services.mixed_xai_service.detect"]
+            models = [execution.enter_context(patch(name, return_value={"status":"success", "algorithm":"MIXED_PATTERN_TREE"})) for name in functions]
+            for job in saved:
+                api.execute_api_job(self.db, job, runtime, run_id=721, include_result=True)
+            self.assertEqual([model.call_count for model in models], [1,1,1,1])
+            discovery_payload = models[2].call_args.args[1]
+            self.assertEqual(discovery_payload["P_MAX_FORMULA_FEATURES"], "6")
+            self.assertEqual(discovery_payload["P_FORMULA_SQRT_ENABLED"], "true")
+        # A retry uses the saved mixed job, including subsequent user changes.
+        self.db.stored[6]["PARAM_JSON"] = json.dumps([{"itemName":"P_MAX_FORMULA_FEATURES", "itemDefault":"8"}])
+        retry, created = defaults.ensure_default_job(self.db, defaults.MIXED_XAI_STAGES[2], inherit_unified_options=True, **SCOPE)
+        self.assertFalse(created)
+        self.assertEqual(retry["PARAMS"][0]["itemDefault"], "8")
+
+    def test_option_inheritance_stays_in_registered_table_and_rejects_other_destination(self):
+        from unittest.mock import Mock
+        conn = Mock()
+        with self.assertRaises(HTTPException):
+            defaults.provision_default_design(conn, project_id=11, scenario_id=22, scenario_table_id=33,
+                                              process_type="UNIFIED", inherit_unified_options=True)
+        conn.cursor.assert_not_called()
+        self.ensure(defaults.UNIFIED_STAGES[2])
+        self.db.stored[0]["SCENARIO_TABLE_ID"] = 999
+        self.db.stored[0]["PARAM_JSON"] = json.dumps([{"itemName":"P_MIXED_MAX_FORMULA_FEATURES", "itemDefault":"8"}])
+        job, _ = defaults.ensure_default_job(self.db, defaults.MIXED_XAI_STAGES[2], inherit_unified_options=True, **SCOPE)
+        self.assertEqual(next(item["itemDefault"] for item in job["PARAMS"] if item["itemName"] == "P_MAX_FORMULA_FEATURES"), "3")
+
     def test_explicitly_inactive_or_non_python_registration_is_not_bypassed(self):
         stage = defaults.MIXED_XAI_STAGES[0]
         for registered in ({"RESOURCE_NAME": stage["modelName"], "USE_YN": "N", "LANGUAGE": "PYTHON"},

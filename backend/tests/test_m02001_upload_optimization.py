@@ -4,6 +4,7 @@ import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from zipfile import ZipFile
 
 from fastapi import HTTPException
 
@@ -37,6 +38,62 @@ class FakeDirectPathConnection(FakeUploadConnection):
 
 
 class M02001UploadOptimizationTests(unittest.TestCase):
+    def test_excel_single_cell_dimension_does_not_truncate_real_data(self):
+        from openpyxl import Workbook
+
+        workbook = Workbook()
+        worksheet = workbook.active
+        worksheet.append(["GROUP_CODE", "VALUE", "TOTAL"])
+        worksheet.append(["A", "10", "20"])
+        worksheet.append(["B", "15", "30"])
+        original = io.BytesIO()
+        workbook.save(original)
+        workbook.close()
+        stream = io.BytesIO()
+        with ZipFile(original) as source, ZipFile(stream, "w") as destination:
+            for entry in source.infolist():
+                content = source.read(entry.filename)
+                if entry.filename == "xl/worksheets/sheet1.xml":
+                    content = content.replace(b'<dimension ref="A1:C3"', b'<dimension ref="A1"')
+                    self.assertIn(b'<dimension ref="A1"', content)
+                destination.writestr(entry, content)
+
+        preview_columns, preview_rows, _ = M02001.read_upload_preview(
+            stream, "export.xlsx", "excel", ",", "", "Y", "auto", 20,
+        )
+        self.assertEqual(preview_columns, ["GROUP_CODE", "VALUE", "TOTAL"])
+        self.assertEqual(preview_rows, [["A", "10", "20"], ["B", "15", "30"]])
+        columns, width, header_width = M02001.inspect_upload_schema(
+            stream, "export.xlsx", "excel", ",", "", "Y", None,
+        )
+        self.assertEqual(columns, preview_columns)
+        self.assertEqual((width, header_width), (3, 3))
+        rows = list(M02001.iter_upload_data_rows(
+            stream, "export.xlsx", "excel", ",", "", "Y", None, width,
+        ))
+        self.assertEqual(rows, preview_rows)
+        inspection = M02001.inspect_quick_edit_upload(stream, "export.xlsx", "excel", ",", "", "Y", "auto")
+        self.assertEqual(inspection["columnCount"], 3)
+        self.assertEqual(inspection["checkedDataRows"], 2)
+        self.assertEqual(inspection["issues"], [{"code": "TOO_FEW_ROWS", "rows": 2, "minimum": 32}])
+        self.assertFalse(stream.closed)
+        self.assertEqual(stream.tell(), 0)
+
+    def test_excel_genuine_single_cell_and_empty_sheet_are_preserved(self):
+        from openpyxl import Workbook
+
+        for value, expected in (("HEADER", [["HEADER"]]), (None, [])):
+            with self.subTest(value=value):
+                workbook = Workbook()
+                if value is not None:
+                    workbook.active["A1"] = value
+                stream = io.BytesIO()
+                workbook.save(stream)
+                workbook.close()
+                self.assertEqual(list(M02001.iter_excel_rows(stream, "single.xlsx")), expected)
+                self.assertFalse(stream.closed)
+                self.assertEqual(stream.tell(), 0)
+
     def test_schema_probe_reads_header_and_late_wide_row_is_rejected(self):
         stream = io.BytesIO(b"A,B\n1,2\n3,4,5\n")
         columns, width, header_width = M02001.inspect_upload_schema(

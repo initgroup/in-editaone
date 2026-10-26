@@ -151,22 +151,25 @@ async function openQuickEdit(saved = {}, language = "ko", options = {}) {
     await page.route("http://quick-edit.test/**", async (route) => {
         const url = new URL(route.request().url());
         if (url.pathname.startsWith("/api/")) {
-            const request = { path: url.pathname, query: Object.fromEntries(url.searchParams), body: route.request().postDataJSON() };
+            const request = { path: url.pathname, query: Object.fromEntries(url.searchParams),
+                body: (route.request().headers()["content-type"] || "").includes("application/json") ? route.request().postDataJSON() : null };
             requests.push(request);
             let payload = { status: "success", data: [] };
             if (request.path.endsWith("/session/me")) payload = { status: "success", targetConnectionId: 1, user: {userId: 100, userName: "Test" } };
             else if (request.path.endsWith("/scenario-table/save")) payload = { status: "success", data: { SCENARIO_TABLE_ID: 30 } };
-            else if (request.path.endsWith("/provision-default-design")) payload = { status: "success", automation: { status: "success", processType: request.body?.processType || "MIXED_XAI", jobIds: request.body?.processType === "UNIFIED" ? [29, 30, 31, 32] : [31, 32], flowId: 40, flowName: "Saved execution" } };
+            else if (request.path.endsWith("/provision-default-design")) payload = { status: "success", automation: { status: "success", processType: request.body?.processType || "MIXED_XAI", jobIds: [29, 30, 31, 32], flowId: 40, flowName: "Saved execution" } };
             else if (request.path.endsWith("/flow/run-saved")) payload = { status: "success", data: { flowRunId: 50, runStatus: "STARTED" } };
             else if (request.path.endsWith("/descriptive-statistics")) payload = { status: "success", data: {
                 available: true, context: { processType: "MIXED_XAI" }, basis: "SINGLE",
                 before: { owner: "TEST_OWNER", table: "INITUP$TEST" },
                 columns: [{ columnName: "VALUE", dataType: "NUMBER", before: { totalRowCount: 200, nullCount: 0, mean: 10, variance: 4, stddev: 2, min: 1, max: 20 } }]
             } };
-            else if (request.path.endsWith("/snapshot")) payload = { status: "success", data: { run: { STATUS: "SUCCESS" }, nodes: [
-                { NODE_NAME: "Discover", REF_MENU_CODE: "M03003", STATUS: "SUCCESS" },
-                { NODE_NAME: "Detect", REF_MENU_CODE: "M03004", STATUS: "SUCCESS" }
-            ] } };
+            else if (request.path.endsWith("/snapshot")) {
+                const stored = await page.evaluate(key => JSON.parse(sessionStorage.getItem(key)), stateKey);
+                const stages = stored.jobIds?.length === 2 ? [3,4] : [1,2,3,4];
+                payload = {status:"success", data:{run:{STATUS:"SUCCESS"}, nodes:stages.map(stage => ({
+                    NODE_NAME:`Stage ${stage}`, REF_MENU_CODE:`M0300${stage}`, STATUS:"SUCCESS"}))}};
+            }
             else if (request.path.endsWith("/mixed-formula-sample")) payload = { status: "success", data: {
                 rule: {ruleId: request.query.ruleId, modelName: request.query.modelName, resultColumn: "Y", conditionText: "X IS NOT NULL",
                     resultText: "Y ≈ X * 2 + 3 (±2)", absoluteTolerance: 2, relativeTolerance: 0},
@@ -207,18 +210,86 @@ async function openQuickEdit(saved = {}, language = "ko", options = {}) {
     return { browser, page, requests, errors };
 }
 
-test("Quick Edit uses only unified editing for new work and stale browser choices", async () => {
-    for (const processType of ["LEGACY", "MIXED_XAI"]) {
-        const { browser, page, errors } = await openQuickEdit({ processType });
+const emptyUploadDraft = {projectId: null, projectCode: "", scenarioId: null, scenarioCode: "", tableName: "", tableOwner: "", uploadId: null, fileMeta: null};
+
+test("Quick Edit validates staged input before creating a workspace, table or FLOW", async () => {
+    for (const language of ["ko", "en"]) {
+        const {browser, page, requests, errors} = await openQuickEdit(emptyUploadDraft, language, {api: async (request, payload) => {
+            if (request.path.endsWith("/upload-session")) return {status: "success", uploadId: "first-upload"};
+            if (request.path.endsWith("/quick-edit-preflight-staged")) return {status: "success", valid: false, rowCountExact: true, checkedDataRows: 31, additionalHeaderRows: 2, issues: [
+                {code: "MULTI_ROW_HEADER", headerRows: 3}, {code: "TOO_FEW_ROWS", rows: 31, minimum: 32}
+            ]};
+            return payload;
+        }});
         try {
-            assert.equal(await page.evaluate((key) => JSON.parse(sessionStorage.getItem(key)).processType, stateKey), "UNIFIED");
+            await page.setViewportSize({width: language === "en" ? 430 : 1440, height: 950});
+            await page.locator('input[type="file"]').setInputFiles({name: "grouped.csv", mimeType: "text/csv", buffer: Buffer.from("A,B\n1,2\n")});
+            await page.click("#runButton");
+            await page.waitForFunction((key) => JSON.parse(sessionStorage.getItem(key)).status === "failed", stateKey);
+            const message = await page.locator("#qeFileValidationMessage").textContent();
+            assert.match(message, language === "ko" ? /헤더가 3행/ : /3 header rows/);
+            assert.match(message, /31/);
+            assert.match(message, /32/);
+            assert.match(message, /29/);
+            assert.equal(await page.isVisible("#qeFileValidationMessage"), true);
+            assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true);
+            fs.mkdirSync(path.join(root, ".runtime"), {recursive: true});
+            await page.locator("#qeFileValidationMessage").screenshot({path: path.join(root, ".runtime", `preflight-review-${language}.png`)});
+            assert.ok(requests.some((r) => r.path.endsWith("/quick-edit-preflight-staged")));
+            assert.equal(requests.some((r) => /project\/save|scenario\/save|upload-staged$|provision-default-design|flow\/run-saved/.test(r.path)), false);
+            const state = await page.evaluate((key) => JSON.parse(sessionStorage.getItem(key)), stateKey);
+            assert.equal(state.projectId, null);
+            assert.equal(state.tableName, "");
+            await page.locator('input[type="file"]').setInputFiles({name: "replacement.csv", mimeType: "text/csv", buffer: Buffer.from("X,Y\n2,3\n")});
+            assert.equal(await page.isVisible("#qeFileValidationMessage"), false);
+            assert.equal(await page.evaluate((key) => JSON.parse(sessionStorage.getItem(key)).uploadId, stateKey), null);
+            assert.deepEqual(errors, []);
+        } finally {await browser.close();}
+    }
+});
+
+test("Quick Edit proceeds only after a successful file check and blocks unavailable checks", async () => {
+    for (const valid of [true, false]) {
+        const {browser, page, requests, errors} = await openQuickEdit(emptyUploadDraft, "ko", {api: async (request, payload) => {
+            if (request.path.endsWith("/upload-session")) return {status: "success", uploadId: "valid-upload"};
+            if (request.path.endsWith("/quick-edit-preflight-staged")) return valid ? {status: "success", valid: true, issues: []} : {status: "error", message: "File check unavailable"};
+            if (request.path.endsWith("/project/save")) return {status: "success", data: {PROJECT_ID: 10, PROJECT_CODE: "VALID"}};
+            if (request.path.endsWith("/scenario/save")) return {status: "success", data: {SCENARIO_ID: 20, SCENARIO_CODE: "RULE"}};
+            if (request.path.endsWith("/upload-staged")) return {status: "success", tableName: "INITUP$VALID", columnCount: 2, rowCount: 40};
+            if (request.path.endsWith("/upload-table-tree")) return {status: "success", data: [{TABLE_NAME: "INITUP$VALID", OWNER: "TEST_OWNER"}]};
+            return payload;
+        }});
+        try {
+            await page.locator('input[type="file"]').setInputFiles({name: "valid.csv", mimeType: "text/csv", buffer: Buffer.from("A,B\n" + "1,2\n".repeat(40))});
+            await page.click("#runButton");
+            await page.waitForFunction(({key, valid}) => JSON.parse(sessionStorage.getItem(key)).status === (valid ? "success" : "failed"), {key: stateKey, valid});
+            const checkIndex = requests.findIndex((r) => r.path.endsWith("/quick-edit-preflight-staged"));
+            assert.ok(checkIndex >= 0);
+            for (const suffix of ["/project/save", "/upload-staged", "/flow/run-saved"]) {
+                const index = requests.findIndex((r) => r.path.endsWith(suffix));
+                assert.equal(valid ? index > checkIndex : index === -1, true);
+            }
+            assert.deepEqual(errors, []);
+        } finally {await browser.close();}
+    }
+});
+
+test("Quick Edit uses only mixed patterns for new work and stale browser choices", async () => {
+    for (const processType of ["LEGACY", "MIXED_XAI", "UNIFIED"]) {
+        const { browser, page, requests, errors } = await openQuickEdit({ processType });
+        try {
+            assert.equal(await page.evaluate((key) => JSON.parse(sessionStorage.getItem(key)).processType, stateKey), "MIXED_XAI");
             assert.equal(await page.locator('input[name="processType"]').count(), 0);
             assert.equal(await page.locator("#qeProcessType").count(), 0);
-            assert.match(await page.locator("#qeProcessName").textContent(), /통합 에디팅/);
+            assert.match(await page.locator("#qeProcessName").textContent(), /혼합형 패턴/);
+            await page.click("#runButton");
+            await page.waitForFunction((key) => JSON.parse(sessionStorage.getItem(key)).status === "success", stateKey);
+            assert.equal(requests.find(r => r.path.endsWith("/provision-default-design")).body.processType, "MIXED_XAI");
+            assert.equal(requests.find(r => r.path.endsWith("/flow/run-saved")).body.quickEditSummary.flowType, "MIXED_XAI_SCENARIO");
             await page.evaluate((key) => sessionStorage.removeItem(key), stateKey);
             await page.reload();
             await page.waitForFunction(() => document.querySelector("#sessionStatus")?.dataset.state === "connected");
-            assert.equal(await page.evaluate((key) => JSON.parse(sessionStorage.getItem(key)).processType, stateKey), "UNIFIED");
+            assert.equal(await page.evaluate((key) => JSON.parse(sessionStorage.getItem(key)).processType, stateKey), "MIXED_XAI");
             assert.equal(await page.locator('input[name="processType"]').count(), 0);
             assert.deepEqual(errors, []);
         } finally { await browser.close(); }
@@ -239,7 +310,7 @@ test("Quick Edit preserves saved process contracts once registration or design e
             const state = await page.evaluate((key) => JSON.parse(sessionStorage.getItem(key)), stateKey);
             assert.equal(state.processType, saved.processType || "LEGACY");
             assert.equal(await page.locator('input[name="processType"]').count(), 0);
-            assert.match(await page.locator("#qeProcessName").textContent(), saved.processType === "MIXED_XAI" ? /혼합형 XAI/ : /기존/);
+            assert.match(await page.locator("#qeProcessName").textContent(), saved.processType === "MIXED_XAI" ? /혼합형 패턴/ : /기존/);
             assert.equal(requests.some((request) => /provision-default-design|flow\/run-saved/.test(request.path)), false);
             assert.deepEqual(errors, []);
         } finally { await browser.close(); }
@@ -344,13 +415,13 @@ test("Quick Edit resumes a previously registered XAI draft without changing its 
     try {
         assert.equal(await page.locator('input[name="processType"]').count(), 0);
         assert.equal(await page.locator("#fileDropZone + #qeProcessInfo").count(), 1);
-        assert.match(await page.locator("#qeProcessName").textContent(), /혼합형 XAI/);
+        assert.match(await page.locator("#qeProcessName").textContent(), /혼합형 패턴/);
         await page.click("#runButton");
         await page.waitForFunction((key) => ["success", "failed"].includes(JSON.parse(sessionStorage.getItem(key)).status), stateKey);
         const saved = await page.evaluate((key) => JSON.parse(sessionStorage.getItem(key)), stateKey);
         assert.equal(saved.status, "success", saved.error);
         assert.equal(saved.processType, "MIXED_XAI");
-        assert.deepEqual(saved.jobIds, [31, 32]);
+        assert.deepEqual(saved.jobIds, [29, 30, 31, 32]);
         assert.equal(requests.find((row) => row.path.endsWith("/provision-default-design")).body.processType, "MIXED_XAI");
         assert.equal(requests.find((row) => row.path.endsWith("/flow/run-saved")).body.quickEditSummary.processType, "MIXED_XAI");
         assert.equal(requests.some((row) => /column-type|column-type-final/.test(row.path)), false);
@@ -678,7 +749,7 @@ test("Unified FLOW uses its four jobs even when old mixed and OML jobs coexist",
     assert.deepEqual(Array.from(designer.getFirstRegisteredJobsByGroup(), (job) => job.EXEC_METHOD), methods);
 });
 
-test("Unified Quick merges conditional and formula results while preserving source metadata", async () => {
+test("Unified Quick defaults both rule families to mixed patterns and retains all-method comparison", async () => {
     let failMixed = false;
     const methods = ["PROFILE", "RELATION", "DISCOVER", "DETECT"];
     const outputs = [
@@ -691,7 +762,8 @@ test("Unified Quick merges conditional and formula results while preserving sour
     const nodes = methods.map((method, i) => ({ FLOW_NODE_RUN_ID: i + 1, NODE_NAME: method, REF_MENU_CODE: `M0300${i + 1}`,
         EXEC_METHOD: `UNIFIED_EDITING_${method}`, STATUS: "SUCCESS", TARGET_OWNER: "TEST_OWNER", TARGET_TABLE: "INITUP$TEST",
         RESULT_OWNER: "TEST_OWNER", RESULT_OBJECTS: outputs[i] }));
-    const { browser, page, requests, errors } = await openQuickEdit({}, "ko", { api: async (request, payload) => {
+    const { browser, page, requests, errors } = await openQuickEdit({processType:"UNIFIED", scenarioTableId:30, flowId:40,
+        flowRunId:50, status:"success", historyView:true, completedSteps:[0,1,2,3,4,5,6,7]}, "ko", { api: async (request, payload) => {
         if (request.path.endsWith("/provision-default-design")) return {status: "success", automation: {status: "success", processType: "UNIFIED", jobIds: [31,32,33,34], flowId: 40, flowName: "Unified"}};
         if (request.path.endsWith("/snapshot")) return {status: "success", data: {run: {STATUS: "SUCCESS"}, nodes}};
         if (request.path.endsWith("/nodes")) return {status: "success", data: nodes};
@@ -708,19 +780,22 @@ test("Unified Quick merges conditional and formula results while preserving sour
         return payload;
     }});
     try {
-        await page.click("#runButton");
-        await page.waitForFunction((key) => ["success", "warning", "failed"].includes(JSON.parse(sessionStorage.getItem(key)).status), stateKey);
+        await page.waitForSelector("[data-editing-family]");
         const state = await page.evaluate((key) => JSON.parse(sessionStorage.getItem(key)), stateKey);
         assert.equal(state.status, "success", state.error || state.resultWarning);
         assert.equal(state.processType, "UNIFIED");
-        assert.equal(state.jobIds.length, 4);
-        assert.equal(requests.find((r) => r.path.endsWith("/flow/run-saved")).body.quickEditSummary.flowType, "UNIFIED_EDITING_SCENARIO");
+        assert.equal(requests.some(r => /provision-default-design|flow\/run-saved/.test(r.path)), false);
         assert.equal(await page.locator("[data-result-source]").count(), 0);
         assert.deepEqual(await page.locator("[data-editing-family]").evaluateAll((buttons) => buttons.map((b) => b.dataset.editingFamily)), ["CONDITION", "FORMULA"]);
         assert.match(await page.locator(".editing-result-cards").textContent(), /CODE = A/);
         assert.equal(requests.filter((r) => r.path.endsWith("/editing-results")).length, 1);
         assert.equal(requests.some((r) => /mixed-xai-results|model-rule-summary|result-table|descriptive-statistics/.test(r.path)), false);
         await page.click('[data-editing-family="FORMULA"]');
+        await page.waitForFunction(() => document.querySelectorAll(".editing-result-card").length === 1);
+        assert.equal(await page.inputValue("[data-editing-source]"), "MIXED_PATTERN");
+        assert.doesNotMatch(await page.locator(".editing-result-cards").textContent(), /X \* 3/);
+        assert.match(await page.locator(".editing-result-cards").textContent(), /VALUE ≈ X \+ 2/);
+        await page.selectOption("[data-editing-source]", "ALL");
         await page.waitForFunction(() => document.querySelectorAll(".editing-result-card").length === 2);
         assert.match(await page.locator(".editing-result-cards").textContent(), /X \* 3/);
         assert.match(await page.locator(".editing-result-cards").textContent(), /VALUE ≈ X \+ 2/);
@@ -755,7 +830,7 @@ test("Unified Quick merges conditional and formula results while preserving sour
 });
 
 
-test("Quick unified guidance and result view controls follow Korean and English without changing identifiers", async () => {
+test("Quick single-engine guidance and result view controls follow Korean and English without changing identifiers", async () => {
     for (const language of ["ko", "en"]) {
         const {browser, page, errors} = await openQuickEdit({}, language);
         try {
@@ -768,8 +843,8 @@ test("Quick unified guidance and result view controls follow Korean and English 
             assert.equal(await page.isVisible("#qePauseButton"), false);
             assert.equal(await page.isVisible("#qeStopButton"), false);
             if (language === "en") {
-                assert.match(title, /Unified editing: four automatic stages/);
-                assert.match(description, /column profiling/);
+                assert.match(title, /Mixed patterns: four automatic stages/);
+                assert.match(description, /mixed statistics/);
                 assert.match(controls, /Condition rules.*Formula rules/s);
                 assert.doesNotMatch(title + description + controls, /[가-힣]/);
                 assert.match(await page.locator("#quickEditTitle").textContent(), /From one file/);
@@ -777,8 +852,8 @@ test("Quick unified guidance and result view controls follow Korean and English 
                 assert.doesNotMatch(await page.locator("#qeStepper").textContent(), /[가-힣]/);
                 assert.match(await page.locator("#setupTitle").textContent(), /Choose a file/);
             } else {
-                assert.match(title, /통합 에디팅 4단계 자동 실행/);
-                assert.match(description, /컬럼 유형·기초통계/);
+                assert.match(title, /혼합형 패턴 4단계 자동 실행/);
+                assert.match(description, /혼합형 기초통계/);
                 assert.match(controls, /조건규칙.*수식규칙/s);
                 assert.doesNotMatch(controls, /Unified run results|Both analyses/);
             }
@@ -813,6 +888,7 @@ test("Quick continuous zero states retain unavailable, failed and recorded diagn
             await page.waitForFunction((key) => ["success", "warning", "failed"].includes(JSON.parse(sessionStorage.getItem(key)).status), stateKey);
             await page.click('[data-editing-family="FORMULA"]');
             await page.waitForFunction(() => document.querySelector('.editing-result-view')?.getAttribute("aria-busy") === "false");
+            await selectEditingSource(page, "LEGACY_SYMBOLIC");
             assert.match(await page.locator("#qeEditingResults").textContent(), item.message);
             assert.equal(await page.locator("[data-editing-rule-key]").count(), 0);
             if (item.name === "error") {
@@ -962,16 +1038,131 @@ function catalogEntry(source, family, id, overrides = {}) {
 }
 function catalogPage(request, entries) {
     const family = request.query.family || "CONDITION", source = request.query.source || "ALL", page = Number(request.query.page || 1), pageSize = Number(request.query.pageSize || 20);
-    const conditionCount = request.query.conditionCount || "ALL", excludeZero = request.query.excludeZero === "true";
+    const conditionCount = request.query.conditionCount || "ALL", excludeZero = request.query.excludeZero === "true", violationsOnly = request.query.violationsOnly === "true";
     const all = entries.filter((entry) => entry.family === family && (source === "ALL" || entry.source === source));
     const selected = all.filter((entry) => (conditionCount === "ALL" || String(entry.row.CONDITION_COUNT ?? -1) === conditionCount)
-        && (!excludeZero || entry.row.VIOLATION_COUNT !== 0));
+        && (!excludeZero || entry.row.VIOLATION_COUNT !== 0) && (!violationsOnly || Number(entry.row.VIOLATION_COUNT) > 0));
     return {status: "success", data: {family, source, page, pageSize, filters: {conditionCount, excludeZero}, conditionCounts: [...new Set(all.map((entry) => String(entry.row.CONDITION_COUNT ?? -1)))].map((value) => ({value})), total: selected.length, hasMore: page * pageSize < selected.length,
         rules: selected.slice((page - 1) * pageSize, page * pageSize), summary: {
             families: Object.fromEntries(["CONDITION", "FORMULA"].map((name) => [name, {ruleCount: entries.filter((entry) => entry.family === name).length}])),
             sourceCounts: [], historicalExplanationCount: 0}, diagnostics: {errors: []}}};
 }
 const completedQuick = {processType: "UNIFIED", scenarioTableId: 30, flowId: 40, flowRunId: 50, status: "success", historyView: true, currentStep: 7, completedSteps: [0,1,2,3,4,5,6,7]};
+
+async function selectEditingSource(page, source) {
+    await page.waitForSelector("[data-editing-source]");
+    await page.selectOption("[data-editing-source]", source);
+    await page.waitForFunction(() => document.querySelector('.editing-result-view')?.getAttribute("aria-busy") === "false");
+}
+
+test("Quick reruns unified history through one mixed design and recovers a failed transition", async () => {
+    for (const failedTransition of [false, true]) {
+        let designCalls = 0;
+        const oldStatus = failedTransition ? "FAILED" : "SUCCESS";
+        const oldNodes = [{NODE_NAME:"Saved discovery", REF_MENU_CODE:"M03003", EXEC_METHOD:"UNIFIED_EDITING_DISCOVER",
+            STATUS:oldStatus, TARGET_OWNER:"TEST_OWNER", TARGET_TABLE:"INITUP$TEST"}];
+        const {browser, page, requests, errors} = await openQuickEdit({...completedQuick, lastRunStatus:oldStatus}, "en", {api: async (request, payload) => {
+            if (request.path.endsWith("/snapshot")) {
+                const old = request.path.includes("/50/");
+                const nodes = old ? oldNodes : ["PROFILE","RELATION","RULE_DISCOVER","RULE_DETECT"].map((method,index) => ({
+                    NODE_NAME:method, REF_MENU_CODE:`M0300${index+1}`, EXEC_METHOD:`MIXED_XAI_${method}`,
+                    STATUS:"SUCCESS", TARGET_OWNER:"TEST_OWNER", TARGET_TABLE:"INITUP$TEST"}));
+                return {status:"success", data:{run:{STATUS:old ? oldStatus : "SUCCESS"}, nodes}};
+            }
+            if (request.path.endsWith("/provision-default-design")) {
+                designCalls++;
+                if (failedTransition && designCalls === 1) return {status:"error", message:"Mixed design temporarily unavailable"};
+                return {status:"success", automation:{status:"success", processType:"MIXED_XAI", jobIds:[61,62,63,64], flowId:41, flowName:"Mixed only"}};
+            }
+            if (request.path.endsWith("/flow/run-saved")) return {status:"success", data:{flowRunId:51, runStatus:"STARTED"}};
+            return payload;
+        }});
+        try {
+            await page.waitForSelector("[data-editing-family]");
+            const button = failedTransition ? "#qeHistoryFailedRerunButton" : "#qeHistoryFullRerunButton";
+            assert.match(await page.locator(button).textContent(), /mixed patterns/);
+            await page.click(button);
+            if (failedTransition) {
+                await page.waitForFunction(key => JSON.parse(sessionStorage.getItem(key)).status === "failed", stateKey);
+                assert.equal(requests.some(r => r.path.endsWith("/flow/run-saved")), false);
+                await page.reload();
+                await page.waitForSelector("#retryButton:not([hidden])");
+                await page.click("#retryButton");
+            }
+            await page.waitForFunction(key => {const state=JSON.parse(sessionStorage.getItem(key)); return state.flowRunId === 51 && state.status === "success";}, stateKey);
+            const state = await page.evaluate(key => JSON.parse(sessionStorage.getItem(key)), stateKey);
+            assert.equal(state.processType, "MIXED_XAI");
+            assert.deepEqual([state.projectId,state.scenarioId,state.scenarioTableId,state.flowId], [10,20,30,41]);
+            assert.ok(state.previousFlowRunIds.includes(50));
+            assert.equal(state.inheritUnifiedOptions, false);
+            const designs = requests.filter(r => r.path.endsWith("/provision-default-design"));
+            assert.equal(designs.length, failedTransition ? 2 : 1);
+            assert.ok(designs.every(r => r.body.processType === "MIXED_XAI" && r.body.inheritUnifiedOptions === true));
+            const runs = requests.filter(r => r.path.endsWith("/flow/run-saved"));
+            assert.equal(runs.length, 1);
+            assert.equal(runs[0].body.flowId, 41);
+            assert.equal(runs[0].body.quickEditSummary.flowType, "MIXED_XAI_SCENARIO");
+            assert.equal(requests.some(r => /rerun-saved-failed-stage|scenario-table\/save|upload/.test(r.path)), false);
+            assert.deepEqual(errors, []);
+        } finally {await browser.close();}
+    }
+});
+
+test("Quick defaults both types to mixed patterns across source changes, detail return and history reload", async () => {
+    const entries = [catalogEntry("LEGACY_ASSOC", "CONDITION", "R1"), catalogEntry("MIXED_PATTERN", "CONDITION", "R1"),
+        catalogEntry("LEGACY_SYMBOLIC", "FORMULA", "F1"), catalogEntry("MIXED_PATTERN", "FORMULA", "F1")];
+    for (const language of ["ko", "en"]) {
+        const {browser, page, requests, errors} = await openQuickEdit(completedQuick, language, {api: async (request, payload) =>
+            request.path.endsWith("/editing-results") ? catalogPage(request, entries) : payload});
+        try {
+            await page.waitForSelector(".editing-result-card");
+            assert.equal(await page.inputValue("[data-editing-source]"), "MIXED_PATTERN");
+            assert.equal(await page.locator(".editing-result-card").count(), 1);
+            assert.match(await page.locator(".editing-result-cards").textContent(), /MIXED_PATTERN result R1/);
+            await page.locator("[data-editing-rule-key]").first().click();
+            await page.click("#qeEditingDetail [data-editing-back]");
+            assert.equal(await page.inputValue("[data-editing-source]"), "MIXED_PATTERN");
+            await page.selectOption("[data-editing-source]", "ALL");
+            await page.waitForFunction(() => document.querySelectorAll(".editing-result-card").length === 2);
+            await page.click('[data-editing-family="FORMULA"]');
+            await page.waitForFunction(() => document.querySelectorAll(".editing-result-card").length === 1);
+            assert.equal(await page.inputValue("[data-editing-source]"), "MIXED_PATTERN");
+            assert.match(await page.locator(".editing-result-cards").textContent(), /MIXED_PATTERN result F1/);
+            await page.selectOption("[data-editing-source]", "LEGACY_SYMBOLIC");
+            await page.waitForFunction(() => document.querySelector(".editing-result-cards")?.textContent.includes("LEGACY_SYMBOLIC result F1"));
+            await page.click('[data-editing-family="CONDITION"]');
+            assert.equal(await page.inputValue("[data-editing-source]"), "MIXED_PATTERN");
+            assert.equal(requests.find(r => r.path.endsWith("/editing-results")).query.source, "MIXED_PATTERN");
+            assert.equal(requests.find(r => r.path.endsWith("/editing-results") && r.query.family === "FORMULA").query.source, "MIXED_PATTERN");
+            await page.reload();
+            await page.waitForSelector(".editing-result-card");
+            assert.equal(await page.inputValue("[data-editing-source]"), "MIXED_PATTERN");
+            assert.equal(requests.some(r => /provision-default-design|run-saved/.test(r.path)), false);
+            assert.deepEqual(errors, []);
+        } finally {await browser.close();}
+    }
+});
+
+test("Quick keeps mixed-pattern zero results explicit for legacy history and allows other methods", async () => {
+    const entries = [catalogEntry("LEGACY_ASSOC", "CONDITION", "R1"), catalogEntry("LEGACY_SYMBOLIC", "FORMULA", "F1")];
+    const {browser, page, requests, errors} = await openQuickEdit({...completedQuick, processType:"LEGACY"}, "en", {api: async (request, payload) =>
+        request.path.endsWith("/editing-results") ? catalogPage(request, entries) : payload});
+    try {
+        await page.waitForSelector(".editing-result-empty");
+        assert.equal(await page.inputValue("[data-editing-source]"), "MIXED_PATTERN");
+        assert.equal(await page.locator(".editing-result-card").count(), 0);
+        await page.selectOption("[data-editing-source]", "LEGACY_ASSOC");
+        await page.waitForSelector(".editing-result-card");
+        await page.click('[data-editing-family="FORMULA"]');
+        await page.waitForSelector(".editing-result-empty");
+        assert.equal(await page.inputValue("[data-editing-source]"), "MIXED_PATTERN");
+        await page.selectOption("[data-editing-source]", "LEGACY_SYMBOLIC");
+        await page.waitForSelector(".editing-result-card");
+        assert.match(await page.locator(".editing-result-cards").textContent(), /LEGACY_SYMBOLIC result F1/);
+        assert.equal(requests.filter(r => r.path.endsWith("/editing-results") && r.query.source === "MIXED_PATTERN").length, 2);
+        assert.deepEqual(errors, []);
+    } finally {await browser.close();}
+});
 
 test("Quick catalogs page 20 on the server and loads independent statistics and rule previews only on demand", async () => {
     const entries = [...Array.from({length: 20}, (_, i) => catalogEntry("LEGACY_ASSOC", "CONDITION", `R${i + 1}`)), catalogEntry("MIXED_PATTERN", "CONDITION", "R1"), catalogEntry("MIXED_PATTERN", "CONDITION", "R2")];
@@ -987,17 +1178,19 @@ test("Quick catalogs page 20 on the server and loads independent statistics and 
     }});
     try {
         await page.waitForSelector(".editing-result-card");
+        await selectEditingSource(page, "ALL");
         assert.equal(await page.locator(".editing-result-card").count(), 20);
         const resultCalls = () => requests.filter((r) => r.path.endsWith("/editing-results"));
-        assert.equal(resultCalls().length, 1);
+        assert.equal(resultCalls().length, 2);
+        assert.equal(resultCalls()[0].query.source, "MIXED_PATTERN");
         assert.equal(resultCalls()[0].query.pageSize, "20");
         assert.equal(requests.some((r) => /descriptive-statistics|result-table|mixed-xai-results|model-rule-summary|sample/.test(r.path)), false);
         await page.locator('[data-editing-page="2"]').first().click();
         await page.waitForFunction(() => document.querySelectorAll(".editing-result-card").length === 2);
-        assert.equal(resultCalls()[1].query.page, "2");
+        assert.equal(resultCalls()[2].query.page, "2");
         await page.locator('[data-editing-page="1"]').first().click();
         assert.equal(await page.locator(".editing-result-card").count(), 20);
-        assert.equal(resultCalls().length, 2);
+        assert.equal(resultCalls().length, 3);
         await page.click("#qeLoadStatistics");
         await page.waitForFunction(() => document.querySelector("#qeLoadStatistics").disabled);
         assert.equal(statsStarted, true);
@@ -1040,6 +1233,7 @@ test("Quick ignores delayed family and violation responses after selection chang
         await page.waitForTimeout(80);
         assert.equal(await page.locator('[data-editing-family="CONDITION"]').getAttribute("aria-pressed"), "true");
         assert.doesNotMatch(await page.locator(".editing-result-cards").textContent(), /F1/);
+        await selectEditingSource(page, "ALL");
         await page.locator("[data-editing-rule-key]").first().click();
         await page.click("#qeCategoricalDetail [data-load-violations]");
         while (!violationStarted) await new Promise((resolve) => setTimeout(resolve, 5));
@@ -1061,7 +1255,7 @@ test("Quick family failures remain retryable without turning unavailable results
         return payload;
     }});
     try {
-        await page.waitForSelector(".editing-result-card");
+        await page.waitForSelector("[data-editing-family]");
         await page.click('[data-editing-family="FORMULA"]');
         await page.waitForSelector("[data-editing-retry]");
         assert.equal(await page.locator(".editing-result-card").count(), 0);
@@ -1072,6 +1266,7 @@ test("Quick family failures remain retryable without turning unavailable results
         assert.match(await page.locator(".editing-result-cards").textContent(), /F1/);
         assert.equal(requests.filter((r) => r.path.endsWith("/editing-results") && r.query.family === "FORMULA").length, 2);
         await page.click('[data-editing-family="CONDITION"]');
+        await selectEditingSource(page, "LEGACY_ASSOC");
         assert.match(await page.locator(".editing-result-cards").textContent(), /LEGACY_ASSOC result R1/);
         assert.deepEqual(errors, []);
     } finally {await browser.close();}
@@ -1088,6 +1283,7 @@ test("Quick formula details preserve source and target scope when both methods u
     try {
         await page.waitForSelector("[data-editing-family]");
         await page.click('[data-editing-family="FORMULA"]');
+        await selectEditingSource(page, "ALL");
         await page.locator("[data-editing-rule-key]").first().click();
         await page.waitForFunction(() => document.querySelector("#qeContinuousSampleTable")?.textContent.includes("12"));
         const query = requests.find((r) => r.path.endsWith("/symbolic-rule-sample")).query;
@@ -1172,7 +1368,7 @@ test("Quick filters stay server scoped and back restores the same rule page and 
     try {
         await page.waitForSelector("[data-editing-condition]");
         await page.selectOption("[data-editing-condition]", "2");
-        await page.check("[data-editing-exclude-zero]");
+        assert.equal(await page.locator("[data-editing-exclude-zero]").count(), 0);
         await page.locator('[data-editing-page="2"]').first().click();
         await page.waitForFunction(() => document.querySelector(".editing-result-pagination").textContent.includes("Page 2"));
         const chosen = page.locator("[data-editing-rule-key]").nth(4);
@@ -1186,12 +1382,12 @@ test("Quick filters stay server scoped and back restores the same rule page and 
         await page.click("#qeEditingDetail [data-editing-back]");
         await page.waitForTimeout(80);
         assert.equal(await page.locator("[data-editing-condition]").inputValue(), "2");
-        assert.equal(await page.locator("[data-editing-exclude-zero]").isChecked(), true);
+        assert.equal(await page.locator("[data-editing-exclude-zero]").count(), 0);
         assert.match(await page.locator(".editing-result-pagination").first().textContent(), /Page 2/);
         assert.equal(await page.evaluate(() => document.activeElement.dataset.editingRuleKey), key);
         assert.ok(Math.abs((await page.evaluate(() => scrollY)) - position) < 3);
         assert.equal(requests.length, count);
-        assert.ok(requests.some((r) => r.query.page === "2" && r.query.conditionCount === "2" && r.query.excludeZero === "true"));
+        assert.ok(requests.some((r) => r.query.page === "2" && r.query.conditionCount === "2" && r.query.violationsOnly === "true"));
         assert.deepEqual(errors, []);
     } finally {await browser.close();}
 });
@@ -1201,6 +1397,7 @@ test("Quick condition and result labels survive catalog to inline detail without
     rule.columnComments = {X: "조사 연도", Y: "응답 결과"};
     const {browser, page, requests, errors} = await openQuickEdit(completedQuick, "ko", {api: async (request, payload) => request.path.endsWith("/editing-results") ? catalogPage(request, [rule]) : payload});
     try {
+        await selectEditingSource(page, "LEGACY_ASSOC");
         await page.waitForSelector("[data-editing-rule-key]");
         assert.match(await page.locator(".editing-result-card").textContent(), /X\[조사 연도\]/);
         await page.click("[data-editing-rule-key]");
@@ -1210,5 +1407,25 @@ test("Quick condition and result labels survive catalog to inline detail without
         assert.match(text, /Y · 응답 결과/);
         assert.ok(!requests.some((r) => r.path.endsWith("/quick-edit-statistics")));
         assert.deepEqual(errors, []);
+    } finally {await browser.close();}
+});
+
+
+test("Quick always requests positive violations before pagination in both families", async () => {
+    const entries = ["CONDITION", "FORMULA"].flatMap(family => Array.from({length:55}, (_,i) =>
+        catalogEntry("MIXED_PATTERN", family, `${family}_${i}`, {VIOLATION_COUNT:i < 30 ? 0 : i === 54 ? null : 3})));
+    const {browser, page, requests, errors} = await openQuickEdit(completedQuick, "en", {api:async(request,payload) => request.path.endsWith("/editing-results") ? catalogPage(request,entries) : payload});
+    try {
+        await page.waitForSelector("[data-editing-rule-key]");
+        assert.equal(await page.locator(".editing-result-card").count(),20);
+        assert.doesNotMatch(await page.locator(".editing-result-cards").innerText(), /CONDITION_0\b|CONDITION_54/);
+        await page.locator('[data-editing-page="2"]').first().click();
+        await page.waitForFunction(() => document.querySelectorAll(".editing-result-card").length === 4);
+        await page.locator('[data-editing-family="FORMULA"]').click();
+        await page.waitForFunction(() => document.querySelectorAll(".editing-result-card").length === 20);
+        assert.doesNotMatch(await page.locator(".editing-result-cards").innerText(), /FORMULA_0\b|FORMULA_54/);
+        assert.ok(requests.filter(r => r.path.endsWith("/editing-results") && r.query.view === "rules").every(r => r.query.violationsOnly === "true"));
+        assert.equal(await page.locator("[data-editing-exclude-zero]").count(),0);
+        assert.deepEqual(errors,[]);
     } finally {await browser.close();}
 });

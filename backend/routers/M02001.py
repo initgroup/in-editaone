@@ -6,6 +6,7 @@
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from pydantic import BaseModel, ConfigDict
 from typing import BinaryIO, Iterator, Optional
+from collections import Counter
 import codecs
 import csv
 import hashlib
@@ -156,6 +157,24 @@ def preview_staged_upload(
     with data_path.open("rb") as staged_file:
         staged_upload = UploadFile(file=staged_file, filename=metadata.get("fileName") or "uploaded-file")
         return preview_upload(staged_upload, fileType, delimiter, fixedWidths, hasHeader, encoding)
+
+
+@router.post("/quick-edit-preflight-staged")
+def preflight_staged_quick_edit_upload(
+    request: Request,
+    uploadId: str = Form(...),
+    fileType: str = Form("csv"),
+    delimiter: str = Form(","),
+    fixedWidths: str = Form(""),
+    hasHeader: str = Form("Y"),
+    encoding: str = Form("auto"),
+):
+    metadata, data_path = require_completed_staged_upload(request, uploadId)
+    with data_path.open("rb") as stream:
+        return inspect_quick_edit_upload(
+            stream, metadata.get("fileName") or "uploaded-file", fileType,
+            delimiter, fixedWidths, hasHeader, encoding,
+        )
 
 
 @router.post("/upload-staged")
@@ -1356,6 +1375,68 @@ def can_decode_sample(sample: bytes, encoding: str) -> bool:
         return False
 
 
+def inspect_quick_edit_upload(stream, filename, file_type, delimiter, fixed_widths, has_header, encoding):
+    """Check a bounded prefix before Quick Edit creates any database objects.
+
+    This is input validation, not a guarantee of model fit or a full-file scan.
+    The normal loader still validates all rows when importing the file.
+    """
+    minimum_rows, probe_limit = 32, 64
+    resolved_encoding = resolve_upload_encoding(stream, file_type, encoding)
+    use_header = str(has_header or "Y").upper() == "Y"
+    raw_rows = iter_upload_raw_rows(stream, filename, file_type, delimiter, fixed_widths, resolved_encoding)
+    header, first_rows, issues = [], [], []
+    row_count, width, complete = 0, 0, True
+    try:
+        for raw_row in raw_rows:
+            if not is_non_empty_row(raw_row):
+                continue
+            row = [stringify_cell(value) for value in raw_row]
+            if not width:
+                width = len(row)
+                if use_header:
+                    header = [value.strip() for value in row]
+                    continue
+            if row_count == probe_limit:
+                complete = False
+                break
+            row_count += 1
+            if len(first_rows) < 3:
+                first_rows.append(row)
+            if len(row) > width and not any(issue["code"] == "ROW_WIDTH" for issue in issues):
+                issues.append({"code": "ROW_WIDTH", "row": row_count, "columns": len(row), "expected": width})
+            if any(len(value.encode("utf-8")) > 4000 for value in row) and not any(issue["code"] == "CELL_SIZE" for issue in issues):
+                issues.append({"code": "CELL_SIZE", "row": row_count})
+    finally:
+        close_row_iterator(raw_rows)
+        stream.seek(0)
+
+    if width < 2:
+        issues.append({"code": "TOO_FEW_COLUMNS", "columns": width, "minimum": 2})
+    if row_count < minimum_rows:
+        issues.append({"code": "TOO_FEW_ROWS", "rows": row_count, "minimum": minimum_rows})
+    # Repeated heading anchors plus grouped duplicate labels are strong evidence
+    # of a multi-row table heading. Duplicate labels alone are not sufficient.
+    header_counts = Counter(value for value in header if value)
+    grouped_header = any(count > 1 for count in header_counts.values())
+    anchors = [index for index, value in enumerate(header) if value and header_counts[value] == 1]
+    repeated_heading_rows = 0
+    if grouped_header and len(anchors) >= 2:
+        for row in first_rows:
+            if all(index < len(row) and row[index].strip() == header[index] for index in anchors):
+                repeated_heading_rows += 1
+            else:
+                break
+    if repeated_heading_rows:
+        issues.insert(0, {"code": "MULTI_ROW_HEADER", "headerRows": 1 + repeated_heading_rows})
+    return {
+        "status": "success", "valid": not issues, "issues": issues,
+        "columnCount": width, "checkedDataRows": row_count, "rowCountExact": complete,
+        "minimumDataRows": minimum_rows, "probeRowLimit": probe_limit,
+        "additionalHeaderRows": repeated_heading_rows, "detectedEncoding": resolved_encoding,
+    }
+
+
 def read_upload_preview(
     stream: BinaryIO,
     filename: str,
@@ -1586,7 +1667,12 @@ def iter_excel_rows(stream: BinaryIO, filename: str) -> Iterator[list[str]]:
     except Exception as error:
         raise HTTPException(status_code=400, detail=f"Excel file could not be read: {filename or 'uploaded file'}") from error
     try:
-        for row in workbook.active.iter_rows(values_only=True):
+        worksheet = workbook.active
+        # Some exporters declare A1 despite storing many rows and columns.
+        # Let the streaming reader use actual cells in this suspicious case.
+        if worksheet.max_row == 1 and worksheet.max_column == 1:
+            worksheet.reset_dimensions()
+        for row in worksheet.iter_rows(values_only=True):
             yield [stringify_cell(cell) for cell in row]
     finally:
         workbook.close()

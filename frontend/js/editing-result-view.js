@@ -41,6 +41,8 @@
     Object.assign(ko, {
         "Condition count": "규칙 조건 개수", "All counts": "전체 개수", "Not recorded": "미기록",
         "{count} conditions": "조건 {count}개", "Exclude zero violations": "위반 0건 제외",
+        "Only rules with detected violations are shown, highest count first.": "위반이 있는 규칙만 위반 많은 순으로 표시합니다.",
+        "No rules with detected violations in this selection.": "이 선택 범위에서 위반이 확인된 규칙이 없습니다.",
         "Review order: violations first, highest count first; zero counts last.": "검토 순서: 위반 있는 규칙 → 위반 많은 순 → 0건 마지막",
         "Counts use detected totals when recorded, otherwise saved rows. Missing detection counts are not zero; confidence is not an error probability.": "건수는 기록된 탐지 총건수를 우선 사용하며, 그 외에는 저장된 행 기준입니다. 탐지 미기록은 0건이 아니며 신뢰도는 오류 확률이 아닙니다.",
         "Rule details": "규칙 상세",
@@ -112,6 +114,7 @@
         if (!node || depth > 30) return "?";
         if (Object.hasOwn(node, "column")) return String(node.column);
         if (Object.hasOwn(node, "value")) return String(node.value);
+        if (node.operator === "SQRT") return `sqrt(${formulaText(node.operand, depth + 1)})`;
         const operator = {ADD: "+", SUBTRACT: "−", MULTIPLY: "×", DIVIDE: "/"}[node.operator];
         return operator ? `(${formulaText(node.left, depth + 1)} ${operator} ${formulaText(node.right, depth + 1)})` : "?";
     }
@@ -166,14 +169,14 @@
         const countFor = (name) => sources.find((item) => item.family === "FORMULA" && item.source === name);
         const blocks = [], t = (key) => translate(key, options);
         const mixed = countFor("MIXED_PATTERN");
-        if (["ALL", "MIXED_PATTERN"].includes(source) && mixed?.status === "available" && Number(mixed.ruleCount) === 0 && root.RuleResultCommon?.continuousDiagnostic) {
+        if (["ALL", "MIXED_PATTERN"].includes(source) && mixed?.status === "available" && Number(mixed.discoveredRuleCount ?? mixed.ruleCount) === 0 && root.RuleResultCommon?.continuousDiagnostic) {
             const diagnostic = root.RuleResultCommon.continuousDiagnostic({summary: saved, ruleSummary: {rules: []}}, t);
             blocks.push(`<h4>${escapeHtml(t(sourceLabels.MIXED_PATTERN))}</h4><p>${escapeHtml(diagnostic.message)}</p>
                 <dl class="editing-result-metrics">${(diagnostic.metrics || []).map((item) => `<div><dt>${escapeHtml(item.label)}</dt><dd>${escapeHtml(item.value)}</dd></div>`).join("")}</dl>
                 ${(diagnostic.reasons || []).length ? `<ul>${diagnostic.reasons.map((item) => `<li>${escapeHtml(item.label)}: ${escapeHtml(item.count)}</li>`).join("")}</ul>` : ""}`);
         }
         const legacy = countFor("LEGACY_SYMBOLIC");
-        if (["ALL", "LEGACY_SYMBOLIC"].includes(source) && legacy?.status === "available" && Number(legacy.ruleCount) === 0) {
+        if (["ALL", "LEGACY_SYMBOLIC"].includes(source) && legacy?.status === "available" && Number(legacy.discoveredRuleCount ?? legacy.ruleCount) === 0) {
             const diagnostic = saved.integratedEditing?.stages?.DISCOVER?.legacyDiagnostics;
             const tasks = (diagnostic?.tasks || []).filter((task) => /LASSO|SYMBOLIC|CONTINUOUS/.test(String(task.task || task.method || "")));
             const parts = Array.isArray(diagnostic?.parts) ? diagnostic.parts.map((part) => String(part).toUpperCase()) : [];
@@ -197,7 +200,9 @@
         const counts = Array.isArray(summary.sourceCounts) ? summary.sourceCounts : [];
         const partial = counts.some((item) => item.status === "unavailable") || (data.diagnostics?.errors || []).length > 0;
         const families = options.showFamilies === false ? "" : `<div class="editing-result-tabs" role="group" aria-label="${escapeHtml(t("Result type"))}">${["CONDITION", "FORMULA"].map((kind) => {
-            const count = present(summary.families?.[kind]?.ruleCount, summary.families?.[kind]?.total);
+            const countSource = kind === family ? source : (options.defaultSource || source);
+            const count = countSource === "ALL" ? present(summary.families?.[kind]?.ruleCount, summary.families?.[kind]?.total)
+                : present(counts.find((item) => item.family === kind && item.source === countSource)?.ruleCount);
             return `<button type="button" data-editing-family="${kind}" aria-pressed="${family === kind}"><strong>${escapeHtml(t(kind === "CONDITION" ? "Condition rules (IF–THEN)" : "Formula rules"))}</strong>${count !== undefined ? `<span>${escapeHtml(t("{count} rules", {count: format(count, options)}))}</span>` : ""}</button>`;
         }).join("")}</div>`;
         const sourceFilter = options.showSourceFilter === false ? "" : `<label class="editing-result-source">${escapeHtml(t("Discovery method"))}<select data-editing-source aria-label="${escapeHtml(t("Discovery method"))}">${["ALL", ...(family === "FORMULA" ? ["LEGACY_SYMBOLIC", "MIXED_PATTERN"] : ["LEGACY_ASSOC", "MIXED_PATTERN"])].map((key) => `<option value="${key}"${source === key ? " selected" : ""}>${escapeHtml(t(key === "ALL" ? "All methods" : sourceLabels[key]))}</option>`).join("")}</select></label>`;
@@ -205,16 +210,16 @@
         const selectedCount = String(filters.conditionCount ?? "ALL");
         const choices = [...new Set([...(data.conditionCounts || []).map((item) => String(item.value)), ...(selectedCount !== "ALL" ? [selectedCount] : [])])];
         const filterControls = `<label class="editing-result-source">${escapeHtml(t("Condition count"))}<select data-editing-condition aria-label="${escapeHtml(t("Condition count"))}"><option value="ALL">${escapeHtml(t("All counts"))}</option>${choices.map((value) => `<option value="${escapeHtml(value)}"${selectedCount === value ? " selected" : ""}>${escapeHtml(value === "-1" ? t("Not recorded") : t("{count} conditions", {count: value}))}</option>`).join("")}</select></label>
-            <label class="editing-result-checkbox"><input type="checkbox" data-editing-exclude-zero ${filters.excludeZero ? "checked" : ""}>${escapeHtml(t("Exclude zero violations"))}</label>`;
+            ${filters.violationsOnly ? "" : `<label class="editing-result-checkbox"><input type="checkbox" data-editing-exclude-zero ${filters.excludeZero ? "checked" : ""}>${escapeHtml(t("Exclude zero violations"))}</label>`}`;
         const historical = Number(summary.historicalExplanationCount) > 0 ? `<aside class="editing-result-notice"><button type="button" data-editing-legacy>${escapeHtml(t("Historical anomaly explanations"))} (${format(summary.historicalExplanationCount, options)})</button><p>${escapeHtml(t("These explain model anomaly candidates and are separate from actual-value editing rules."))}</p></aside>` : "";
         const unclassified = Number(summary.unclassifiedRuleCount) > 0 ? `<p class="editing-result-notice" role="status">${escapeHtml(t("{count} stored results have an unrecognized expression type. They are excluded from these two lists; review the original source analysis.", {count: format(summary.unclassifiedRuleCount, options)}))}</p>` : "";
         const error = options.error ? `<div class="editing-result-error" role="alert">${escapeHtml(options.error)} <button type="button" data-editing-retry>${escapeHtml(t("Retry"))}</button></div>` : "";
         const rows = Array.isArray(data.rules) ? data.rules : [];
         return `<section class="editing-result-view" aria-busy="${Boolean(options.loading)}">${families}
-            <div class="editing-result-tools">${sourceFilter}${filterControls}</div><p class="editing-result-note">${escapeHtml(t("Review order: violations first, highest count first; zero counts last."))}<br>${escapeHtml(t("Counts use detected totals when recorded, otherwise saved rows. Missing detection counts are not zero; confidence is not an error probability."))}</p><p class="editing-result-note">${escapeHtml(t("Methods remain attached to each rule. Their scores have different meanings."))}</p>
+            <div class="editing-result-tools">${sourceFilter}${filterControls}</div><p class="editing-result-note">${escapeHtml(t(filters.violationsOnly ? "Only rules with detected violations are shown, highest count first." : "Review order: violations first, highest count first; zero counts last."))}<br>${escapeHtml(t("Counts use detected totals when recorded, otherwise saved rows. Missing detection counts are not zero; confidence is not an error probability."))}</p><p class="editing-result-note">${escapeHtml(t("Methods remain attached to each rule. Their scores have different meanings."))}</p>
             ${partial ? `<p class="editing-result-error" role="status">${escapeHtml(t("Some results are unavailable. Counts describe the available results only."))}</p>` : ""}${historical}${unclassified}${error}${renderDiagnostics(data, {...options, family, source})}
             ${options.loading ? `<p class="editing-result-loading" role="status">${escapeHtml(t("Loading rules…"))}</p>` : ""}${pagination(data, options)}
-            <div class="editing-result-cards">${rows.map((entry) => renderCard(entry, options)).join("") || (!options.loading && !options.error ? `<p class="editing-result-empty">${escapeHtml(t("No rules in this selection."))}</p>` : "")}</div>
+            <div class="editing-result-cards">${rows.map((entry) => renderCard(entry, options)).join("") || (!options.loading && !options.error ? `<p class="editing-result-empty">${escapeHtml(t(filters.violationsOnly ? "No rules with detected violations in this selection." : "No rules in this selection."))}</p>` : "")}</div>
             ${rows.length > 4 ? pagination(data, options) : ""}<p class="editing-result-note">${escapeHtml(t("The same data row may violate several rules; violation counts are not unique error counts."))}</p></section>`;
     }
     function bind(container, handlers = {}) {

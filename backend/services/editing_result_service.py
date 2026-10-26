@@ -124,15 +124,16 @@ def _index_sql(tables):
     return "\nUNION ALL\n".join(parts)
 
 
-def _summary(cursor, params, tables, index_sql):
+def _summary(cursor, params, tables, index_sql, violations_only=False):
     groups = _query(cursor, "EDITING_INDEX_COUNTS", params, index_sql=index_sql) if index_sql else []
     source_counts = []
     for source, (_, table, _) in SOURCES.items():
         for family in (*FAMILIES, "UNCLASSIFIED"):
             if source == "LEGACY_ASSOC" and family == "FORMULA" or source == "LEGACY_SYMBOLIC" and family != "FORMULA":
                 continue
-            count = sum(int(row["RULE_COUNT"]) for row in groups if row["SOURCE_FAMILY"] == source and row["RESULT_FAMILY"] == family)
+            count = sum(int(row["VIOLATING_RULE_COUNT"] if violations_only else row["RULE_COUNT"]) for row in groups if row["SOURCE_FAMILY"] == source and row["RESULT_FAMILY"] == family)
             source_counts.append({"family": family, "source": source, "ruleCount": count,
+                                  "discoveredRuleCount": sum(int(row["RULE_COUNT"]) for row in groups if row["SOURCE_FAMILY"] == source and row["RESULT_FAMILY"] == family),
                                   "status": "available" if table in tables else "unavailable"})
     historical = 0
     if "INIT$_TB_RULEDISC_XAI" in tables:
@@ -224,7 +225,7 @@ def _diagnostics(cursor, params, tables, *, full=False):
 
 
 def read_results(conn, flow_run_id, user_id, *, include_all_users=False, target_owner="", target_table="",
-                 view="rules", family="CONDITION", page=1, page_size=20, source="ALL", rule_key="", condition_count="ALL", exclude_zero=False):
+                 view="rules", family="CONDITION", page=1, page_size=20, source="ALL", rule_key="", condition_count="ALL", exclude_zero=False, violations_only=False):
     view, family, source = str(view).lower(), str(family).upper(), str(source).upper()
     if view not in {"summary", "rules", "violations", "diagnostics"} or family not in FAMILIES or source not in {"ALL", *SOURCES}:
         raise HTTPException(400, "Unsupported result view, family or source.")
@@ -276,10 +277,10 @@ def read_results(conn, flow_run_id, user_id, *, include_all_users=False, target_
                     "detectionCountRecorded": rule["row"].get("VIOLATION_COUNT") is not None,
                     "countBasis": "STORED_VIOLATION_ROWS", "fullViolationCount": rule["row"].get("VIOLATION_COUNT")}}
         index_sql = _index_sql(tables)
-        summary, groups = _summary(cursor, params, tables, index_sql)
+        summary, groups = _summary(cursor, params, tables, index_sql, violations_only)
         diagnostics = {**_diagnostics(cursor, params, tables),
                        "classificationPolicy": "STORED_RESULT_SEMANTICS", "warnings": [], "errors": [],
-                       "orderPolicy": "VIOLATIONS_DESC_ZERO_LAST", "ruleRowsFetched": 0,
+                       "orderPolicy": "VIOLATIONS_ONLY_DESC" if violations_only else "VIOLATIONS_DESC_ZERO_LAST", "ruleRowsFetched": 0,
                        "violationRowsFetched": 0}
         missing = [row["source"] for row in summary["sourceCounts"] if row["status"] == "unavailable"]
         if missing:
@@ -292,19 +293,22 @@ def read_results(conn, flow_run_id, user_id, *, include_all_users=False, target_
         facets = {}
         for row in selected:
             count = int(row["FILTER_CONDITION_COUNT"]) if row["FILTER_CONDITION_COUNT"] is not None else -1
-            facets[count] = facets.get(count, 0) + int(row["RULE_COUNT"]) - (int(row["ZERO_COUNT"]) if exclude_zero else 0)
+            visible = int(row["VIOLATING_RULE_COUNT"]) if violations_only else int(row["RULE_COUNT"]) - (int(row["ZERO_COUNT"]) if exclude_zero else 0)
+            if visible:
+                facets[count] = facets.get(count, 0) + visible
         total = sum(value for count, value in facets.items() if condition_count == "ALL" or count == int(condition_count))
         rules = []
         if view == "rules" and index_sql:
             keys = _query(cursor, "EDITING_INDEX_PAGE", {**params, "source": source, "family": family,
                           "allConditions": "Y" if condition_count == "ALL" else "N",
                           "conditionCount": -1 if condition_count == "ALL" else int(condition_count),
-                          "excludeZero": "Y" if exclude_zero else "N", "offset": (page - 1) * page_size, "pageSize": page_size}, index_sql=index_sql)
+                          "excludeZero": "Y" if exclude_zero else "N", "violationsOnly": "Y" if violations_only else "N",
+                          "offset": (page - 1) * page_size, "pageSize": page_size}, index_sql=index_sql)
             rules = _page_rules(cursor, params, keys, result_owner)
             _attach_column_comments(cursor, rules)
             diagnostics["ruleRowsFetched"] = len(rules)
         return {"status": "success", "data": {"view": view, "family": family, "source": source,
                 "total": total, "page": page, "pageSize": page_size, "hasMore": page * page_size < total,
                 "rules": rules, "summary": summary, "diagnostics": diagnostics,
-                "filters": {"conditionCount": condition_count, "excludeZero": bool(exclude_zero)},
+                "filters": {"conditionCount": condition_count, "excludeZero": bool(exclude_zero), "violationsOnly": bool(violations_only)},
                 "conditionCounts": [{"value": str(key), "count": value} for key, value in sorted(facets.items())]}}

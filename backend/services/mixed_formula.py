@@ -9,6 +9,7 @@ from backend.services.mixed_numeric import TEXT_TYPES, numeric_text_sql, parse_n
 
 NUMERIC_TYPES = {"NUMBER", "FLOAT", "BINARY_FLOAT", "BINARY_DOUBLE"}
 OPERATORS = {"ADD": "+", "SUBTRACT": "-", "MULTIPLY": "*", "DIVIDE": "/"}
+MAX_EXPRESSION_SQL_CHARS = 128 * 1024
 
 
 def number(value):
@@ -27,6 +28,11 @@ def compile_expression(expression, columns, *, prefix="fx", forbidden_column=Non
     metadata = {c["COLUMN_NAME"]: c for c in columns}
     binds, referenced = {}, set()
     count = 0
+
+    def bounded(sql):
+        if len(sql) > MAX_EXPRESSION_SQL_CHARS:
+            raise HTTPException(400, "Formula expression SQL exceeds the size limit.")
+        return sql
 
     def visit(node, depth=0):
         nonlocal count
@@ -50,12 +56,15 @@ def compile_expression(expression, columns, *, prefix="fx", forbidden_column=Non
             binds[key] = number(node["value"])
             return ":" + key
         op = node.get("operator")
+        if op == "SQRT" and set(node) == {"operator", "operand"}:
+            operand = visit(node["operand"], depth + 1)
+            return bounded(f"SQRT(CASE WHEN {operand} >= 0 THEN {operand} END)")
         if not isinstance(op, str) or op not in OPERATORS or set(node) != {"operator", "left", "right"}:
             raise HTTPException(400, "Unsupported formula expression operator.")
         left, right = visit(node["left"], depth + 1), visit(node["right"], depth + 1)
         if op == "DIVIDE":
             right = f"NULLIF({right}, 0)"
-        return f"({left} {OPERATORS[op]} {right})"
+        return bounded(f"({left} {OPERATORS[op]} {right})")
 
     sql = visit(expression)
     if not referenced:
@@ -94,6 +103,9 @@ def evaluate_expression(expression, row):
             return None if value is None or value == "" else number(value)
         if "value" in node:
             return number(node["value"])
+        if node.get("operator") == "SQRT":
+            operand = visit(node["operand"], depth + 1)
+            return None if operand is None or operand < 0 else operand.sqrt()
         left, right = visit(node["left"], depth + 1), visit(node["right"], depth + 1)
         if left is None or right is None:
             return None

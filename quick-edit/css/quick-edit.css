@@ -1147,6 +1147,19 @@ select:disabled {
     line-height: 1.55;
 }
 
+.qe-file-validation-message {
+    margin: 12px;
+    padding: 12px;
+    border: 1px solid var(--qe-danger);
+    border-radius: var(--qe-radius-sm);
+    color: var(--qe-danger);
+    background: var(--qe-danger-soft);
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
 .qe-csv-header-requirement > span:first-child {
     display: grid;
     width: 18px;

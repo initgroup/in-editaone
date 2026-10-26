@@ -510,7 +510,8 @@ def _pattern_rule_metadata(cursor, rule: dict[str, Any], source_params=None) -> 
                 return set()
             if "column" in node:
                 return {str(node["column"])}
-            return formula_columns(node.get("left"), depth + 1) | formula_columns(node.get("right"), depth + 1)
+            return (formula_columns(node.get("left"), depth + 1) | formula_columns(node.get("right"), depth + 1)
+                    | formula_columns(node.get("operand"), depth + 1))
         rule["RESULT_KIND"] = "FORMULA"
         rule["FEATURE_COLUMNS"] = sorted(formula_columns(rule["RESULT_AST"].get("expression")))
         rule["ABSOLUTE_TOLERANCE"] = rule["RESULT_AST"].get("absoluteTolerance")
@@ -559,7 +560,11 @@ def _pattern_result_accepts_value(rule, value, *, expected_value=None):
             return all(values) if op == "AND" else any(values)
         if node.get("column") != target:
             return False
-        missing = value is None or value == ""
+        numeric_text = node.get("numericText") is True
+        if numeric_text:
+            from backend.services.mixed_numeric import parse_numeric_decimal
+            parsed = parse_numeric_decimal(value)
+        missing = parsed is None if numeric_text else value is None or value == ""
         if op == "IS_NULL":
             return missing
         if op == "NOT_NULL":
@@ -567,10 +572,10 @@ def _pattern_result_accepts_value(rule, value, *, expected_value=None):
         if missing:
             return False
         expected = node.get("value")
-        actual = value
+        actual = parsed if numeric_text else value
         if node.get("valueType") in {"NUMBER", "BINARY_FLOAT"} or isinstance(expected, (int, float, Decimal)):
             try:
-                actual, expected = Decimal(str(value)), Decimal(str(expected))
+                actual, expected = Decimal(str(actual)), Decimal(str(expected))
                 if not actual.is_finite() or not expected.is_finite():
                     return False
             except (InvalidOperation, TypeError, ValueError):

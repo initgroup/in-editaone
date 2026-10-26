@@ -246,6 +246,27 @@ test("formula rules show prediction coverage and validation errors and generate 
     }
 });
 
+test("sqrt formulas retain operands in display, live SQL and input metadata", () => {
+    for (const language of ["ko", "en"]) {
+        const {page, common, sandbox} = setup(language);
+        const expression = {operator: "DIVIDE", left: {column: "VALUE", numericText: true},
+            right: {operator: "SQRT", operand: {column: "SIZE", numericText: true}}};
+        const ast = {operator: "WITHIN_TOLERANCE", column: "CODE", numericText: true,
+            expression, absoluteTolerance: .1, relativeTolerance: 0};
+        const row = {RESULT_COLUMN: "CODE", RESULT_AST: ast};
+        const html = sandbox.window.EditingResultView.renderExpression({family: "FORMULA", source: "MIXED_PATTERN", row});
+        assert.match(html, /VALUE \/ sqrt\(SIZE\)/);
+        assert.deepEqual(Array.from(page.getMixedFormulaFeatureColumns(row)), ["VALUE", "SIZE"]);
+        const sql = common.expressionSql(expression);
+        assert.match(sql, /NULLIF\(SQRT\(CASE WHEN/);
+        assert.match(sql, /T\."SIZE"/);
+        assert.match(sql, />= 0 THEN/);
+        assert.match(common.predicateSql(ast), /SQRT\(CASE WHEN/);
+        assert.throws(() => common.expressionSql({operator: "SQRT", operand: {column: "X;DELETE"}}));
+        assert.throws(() => common.expressionSql({operator: "SQRT"}));
+    }
+});
+
 test("mixed first stages display stored statistics and relationships without inventing historical nodes", async () => {
     for (const language of ["ko", "en"]) {
         const { page, common, sandbox, panel, payload } = patternSetup(language);

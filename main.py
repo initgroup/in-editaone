@@ -20,7 +20,7 @@ from backend.auth_context import (
     refresh_session_cookie,
     require_admin_role,
 )
-from backend.routers import common_router, googleGenai, home, M01001, M01002, M02001, M02002, M03001, M03002, M03003, M03004, M04001, M06001, M06002, M90001, M90002, M90003, M91001, M91002, M91003, M99001, M99002, M99003, M99004, metadata, ml_analysis, population_api
+from backend.routers import common_router, googleGenai, home, M00002, M01001, M01002, M02001, M02002, M03001, M03002, M03003, M03004, M04001, M06001, M06002, M90001, M90002, M90003, M91001, M91002, M91003, M99001, M99002, M99003, M99004, metadata, ml_analysis, population_api
 from backend.services.anly_work_router import create_anly_work_router
 from backend.services.edit_work_router import create_edit_work_router
 
@@ -32,7 +32,7 @@ app = FastAPI(title="IN-EDITAONE API")
 
 
 class _GeminiRequestBodyLimitMiddleware:
-    """Bound the Gemini request body even when Content-Length is omitted."""
+    """Bound AI attachments and demo uploads even without Content-Length."""
 
     def __init__(self, wrapped_app):
         self.app = wrapped_app
@@ -53,12 +53,14 @@ class _GeminiRequestBodyLimitMiddleware:
         if (
             scope.get("type") != "http"
             or scope.get("method", "").upper() != "POST"
-            or scope.get("path") != "/api/googleGenai/search"
+            or scope.get("path") not in {"/api/googleGenai/search", "/api/M00002/analyze", "/api/M00002/preflight"}
         ):
             await self.app(scope, receive, send)
             return
 
-        max_request_bytes = self._max_request_bytes()
+        simple_edit_request = scope.get("path", "").startswith("/api/M00002/")
+        max_request_bytes = 20 * 1024 * 1024 + 65536 if simple_edit_request else self._max_request_bytes()
+        limit_detail = "규칙 디스커버리 파일은 20MB 이하여야 합니다." if simple_edit_request else "AI attachment request exceeds the server size limit."
         headers = dict(scope.get("headers") or [])
         content_length = headers.get(b"content-length", b"").strip()
         if content_length:
@@ -75,7 +77,7 @@ class _GeminiRequestBodyLimitMiddleware:
                     receive,
                     send,
                     413,
-                    "AI attachment request exceeds the server size limit.",
+                    limit_detail,
                 )
                 return
 
@@ -108,7 +110,7 @@ class _GeminiRequestBodyLimitMiddleware:
                 limited_receive,
                 send,
                 413,
-                "AI attachment request exceeds the server size limit.",
+                limit_detail,
             )
 
         async def limited_send(message):
@@ -251,7 +253,7 @@ async def add_cache_headers(request, call_next):
     path = request.url.path
     no_cache_paths = (
         path in ("/", "/index.html")
-        or path.startswith(("/js/", "/css/", "/pages/", "/config/", "/i18n/", "/quick-edit"))
+        or path.startswith(("/js/", "/css/", "/pages/", "/config/", "/i18n/", "/quick-edit", "/simple-edit"))
         or path.endswith((".html", ".js", ".css"))
     )
     if no_cache_paths:
@@ -267,6 +269,7 @@ app.add_middleware(_GeminiRequestBodyLimitMiddleware)
 routers = [
     (common_router.router, "common"), 
     (home.router, "home"),
+    (M00002.router, "M00002"),
     (M01001.router, "M01001"),
     (M01002.router, "M01002"),
     (M02001.router, "M02001"),
@@ -344,4 +347,5 @@ base_path = Path(__file__).resolve().parent
 frontend_path = base_path / "frontend"
 quick_edit_path = base_path / "quick-edit"
 app.mount("/quick-edit", StaticFiles(directory=quick_edit_path, html=True), name="quick-edit")
+app.mount("/simple-edit", StaticFiles(directory=base_path / "simple-edit", html=True), name="simple-edit")
 app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")

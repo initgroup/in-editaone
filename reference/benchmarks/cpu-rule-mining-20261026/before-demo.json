@@ -1,0 +1,4405 @@
+{
+  "profile": "demo",
+  "options": {
+    "maxRows": 10000,
+    "maxColumns": 100,
+    "maxFeatures": 2048,
+    "treeMaxDepth": 4,
+    "maxTargets": 24,
+    "maxRules": 32,
+    "maxContinuousTargets": 12,
+    "maxContinuousRules": 16,
+    "maxFormulaFeatures": 6,
+    "maxConditionalGroups": 4,
+    "formulaSqrtEnabled": true,
+    "randomSeed": 42
+  },
+  "seed": 42,
+  "inputSha256": "4a697b63c8742d4bf778f6a93b7acdee7b78bfd456b7a80d263e7ceff16db5dc",
+  "sourceRows": 1500,
+  "sampleRows": 1500,
+  "sourceColumns": 55,
+  "seconds": 13.847,
+  "cpu": "Intel64 Family 6 Model 158 Stepping 13, GenuineIntel",
+  "python": "3.12.9",
+  "packages": {
+    "numpy": "2.5.0",
+    "scikit-learn": "1.9.0"
+  },
+  "formulaCount": 9,
+  "conditionCount": 23,
+  "rules": [
+    {
+      "kind": "VALUE",
+      "text": "IF (아파트층수 IS NULL OR 아파트층수 != '0') THEN 주택유형 = '아파트'",
+      "target": "주택유형",
+      "trainingConfidence": 1.0,
+      "validation": {
+        "conditionCount": 186,
+        "supportCount": 186,
+        "confidence": 1.0,
+        "totalCount": 375,
+        "resultCount": 186,
+        "support": 0.496,
+        "lift": 2.0161290322580645,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 787,
+      "sampleViolations": 0,
+      "condition": {
+        "operator": "OR",
+        "conditions": [
+          {
+            "column": "C016",
+            "operator": "IS_NULL"
+          },
+          {
+            "column": "C016",
+            "operator": "!=",
+            "value": "0"
+          }
+        ]
+      },
+      "result": {
+        "column": "C014",
+        "operator": "=",
+        "value": "아파트"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF (주택유형 IS NULL OR 주택유형 != '아파트') THEN 아파트층수 = '0'",
+      "target": "아파트층수",
+      "trainingConfidence": 1.0,
+      "validation": {
+        "conditionCount": 189,
+        "supportCount": 189,
+        "confidence": 1.0,
+        "totalCount": 375,
+        "resultCount": 189,
+        "support": 0.504,
+        "lift": 1.9841269841269842,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 713,
+      "sampleViolations": 0,
+      "condition": {
+        "operator": "OR",
+        "conditions": [
+          {
+            "column": "C014",
+            "operator": "IS_NULL"
+          },
+          {
+            "column": "C014",
+            "operator": "!=",
+            "value": "아파트"
+          }
+        ]
+      },
+      "result": {
+        "column": "C016",
+        "operator": "=",
+        "value": "0"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF 가구원수 = '1' THEN 가구유형 = '1인가구'",
+      "target": "가구유형",
+      "trainingConfidence": 1.0,
+      "validation": {
+        "conditionCount": 116,
+        "supportCount": 116,
+        "confidence": 1.0,
+        "totalCount": 375,
+        "resultCount": 116,
+        "support": 0.30933333333333335,
+        "lift": 3.232758620689655,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 466,
+      "sampleViolations": 0,
+      "condition": {
+        "column": "C018",
+        "operator": "=",
+        "value": "1"
+      },
+      "result": {
+        "column": "C017",
+        "operator": "=",
+        "value": "1인가구"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF 가구유형 = '1인가구' THEN 가구원수 = '1'",
+      "target": "가구원수",
+      "trainingConfidence": 1.0,
+      "validation": {
+        "conditionCount": 116,
+        "supportCount": 116,
+        "confidence": 1.0,
+        "totalCount": 375,
+        "resultCount": 116,
+        "support": 0.30933333333333335,
+        "lift": 3.232758620689655,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 466,
+      "sampleViolations": 0,
+      "condition": {
+        "column": "C017",
+        "operator": "=",
+        "value": "1인가구"
+      },
+      "result": {
+        "column": "C018",
+        "operator": "=",
+        "value": "1"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF (가구유형 = '1인가구' AND (NUMERIC(경제스트레스지수) IS NULL OR (NUMERIC(경제스트레스지수) IS NOT NULL AND 경제스트레스지수 <= 42.25))) THEN 가구원수구간 = '1인'",
+      "target": "가구원수구간",
+      "trainingConfidence": 1.0,
+      "validation": {
+        "conditionCount": 108,
+        "supportCount": 108,
+        "confidence": 1.0,
+        "totalCount": 375,
+        "resultCount": 115,
+        "support": 0.288,
+        "lift": 3.2608695652173916,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 438,
+      "sampleViolations": 0,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "column": "C017",
+            "operator": "=",
+            "value": "1인가구"
+          },
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C053",
+                "operator": "IS_NULL",
+                "numericText": true
+              },
+              {
+                "operator": "AND",
+                "conditions": [
+                  {
+                    "column": "C053",
+                    "operator": "NOT_NULL",
+                    "numericText": true
+                  },
+                  {
+                    "column": "C053",
+                    "operator": "<=",
+                    "value": 42.25,
+                    "valueType": "BINARY_FLOAT",
+                    "numericText": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "column": "C019",
+        "operator": "=",
+        "value": "1인"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF ((가구유형 IS NULL OR 가구유형 != '1인가구') AND 가구원수구간 = '2인') THEN 가구원수 = '2'",
+      "target": "가구원수",
+      "trainingConfidence": 1.0,
+      "validation": {
+        "conditionCount": 87,
+        "supportCount": 87,
+        "confidence": 1.0,
+        "totalCount": 375,
+        "resultCount": 88,
+        "support": 0.232,
+        "lift": 4.261363636363637,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 383,
+      "sampleViolations": 0,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C017",
+                "operator": "IS_NULL"
+              },
+              {
+                "column": "C017",
+                "operator": "!=",
+                "value": "1인가구"
+              }
+            ]
+          },
+          {
+            "column": "C019",
+            "operator": "=",
+            "value": "2인"
+          }
+        ]
+      },
+      "result": {
+        "column": "C018",
+        "operator": "=",
+        "value": "2"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF ((가구유형 IS NULL OR 가구유형 != '1인가구') AND 가구원수 = '2' AND (NUMERIC(경제스트레스지수) IS NULL OR (NUMERIC(경제스트레스지수) IS NOT NULL AND 경제스트레스지수 <= 40.95000076293945))) THEN 가구원수구간 = '2인'",
+      "target": "가구원수구간",
+      "trainingConfidence": 1.0,
+      "validation": {
+        "conditionCount": 84,
+        "supportCount": 84,
+        "confidence": 1.0,
+        "totalCount": 375,
+        "resultCount": 88,
+        "support": 0.224,
+        "lift": 4.261363636363637,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 364,
+      "sampleViolations": 0,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C017",
+                "operator": "IS_NULL"
+              },
+              {
+                "column": "C017",
+                "operator": "!=",
+                "value": "1인가구"
+              }
+            ]
+          },
+          {
+            "column": "C018",
+            "operator": "=",
+            "value": "2"
+          },
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C053",
+                "operator": "IS_NULL",
+                "numericText": true
+              },
+              {
+                "operator": "AND",
+                "conditions": [
+                  {
+                    "column": "C053",
+                    "operator": "NOT_NULL",
+                    "numericText": true
+                  },
+                  {
+                    "column": "C053",
+                    "operator": "<=",
+                    "value": 40.95000076293945,
+                    "valueType": "BINARY_FLOAT",
+                    "numericText": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "column": "C019",
+        "operator": "=",
+        "value": "2인"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF ((NUMERIC(월근로소득_만원) IS NOT NULL AND 월근로소득_만원 <= 17.5) AND 경제활동상태 = '비경제활동' AND (NUMERIC(가구주연령) IS NULL OR (NUMERIC(가구주연령) IS NOT NULL AND 가구주연령 > 24.5))) THEN 종사상지위 = '비경제활동'",
+      "target": "종사상지위",
+      "trainingConfidence": 1.0,
+      "validation": {
+        "conditionCount": 89,
+        "supportCount": 89,
+        "confidence": 1.0,
+        "totalCount": 375,
+        "resultCount": 92,
+        "support": 0.23733333333333334,
+        "lift": 4.076086956521739,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 355,
+      "sampleViolations": 0,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "operator": "AND",
+            "conditions": [
+              {
+                "column": "C034",
+                "operator": "NOT_NULL",
+                "numericText": true
+              },
+              {
+                "column": "C034",
+                "operator": "<=",
+                "value": 17.5,
+                "valueType": "BINARY_FLOAT",
+                "numericText": true
+              }
+            ]
+          },
+          {
+            "column": "C026",
+            "operator": "=",
+            "value": "비경제활동"
+          },
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C021",
+                "operator": "IS_NULL",
+                "numericText": true
+              },
+              {
+                "operator": "AND",
+                "conditions": [
+                  {
+                    "column": "C021",
+                    "operator": "NOT_NULL",
+                    "numericText": true
+                  },
+                  {
+                    "column": "C021",
+                    "operator": ">",
+                    "value": 24.5,
+                    "valueType": "BINARY_FLOAT",
+                    "numericText": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "column": "C025",
+        "operator": "=",
+        "value": "비경제활동"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF ((NUMERIC(가구주연령) IS NULL OR (NUMERIC(가구주연령) IS NOT NULL AND 가구주연령 > 49.5)) AND (NUMERIC(가구주연령) IS NOT NULL AND 가구주연령 > 59.5) AND (NUMERIC(가구주연령) IS NOT NULL AND 가구주연령 > 69.5)) THEN 가구주연령대 = '70대 이상'",
+      "target": "가구주연령대",
+      "trainingConfidence": 1.0,
+      "validation": {
+        "conditionCount": 59,
+        "supportCount": 57,
+        "confidence": 0.9661016949152542,
+        "totalCount": 375,
+        "resultCount": 59,
+        "support": 0.152,
+        "lift": 6.140476874461362,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 210,
+      "sampleViolations": 2,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C021",
+                "operator": "IS_NULL",
+                "numericText": true
+              },
+              {
+                "operator": "AND",
+                "conditions": [
+                  {
+                    "column": "C021",
+                    "operator": "NOT_NULL",
+                    "numericText": true
+                  },
+                  {
+                    "column": "C021",
+                    "operator": ">",
+                    "value": 49.5,
+                    "valueType": "BINARY_FLOAT",
+                    "numericText": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "operator": "AND",
+            "conditions": [
+              {
+                "column": "C021",
+                "operator": "NOT_NULL",
+                "numericText": true
+              },
+              {
+                "column": "C021",
+                "operator": ">",
+                "value": 59.5,
+                "valueType": "BINARY_FLOAT",
+                "numericText": true
+              }
+            ]
+          },
+          {
+            "operator": "AND",
+            "conditions": [
+              {
+                "column": "C021",
+                "operator": "NOT_NULL",
+                "numericText": true
+              },
+              {
+                "column": "C021",
+                "operator": ">",
+                "value": 69.5,
+                "valueType": "BINARY_FLOAT",
+                "numericText": true
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "column": "C022",
+        "operator": "=",
+        "value": "70대 이상"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF ((교육수준 IS NULL OR 교육수준 != '고등학교') AND (교육수준 IS NULL OR 교육수준 != '대학교') AND 교육수준 = '중학교') THEN 교육수준코드 = '3'",
+      "target": "교육수준코드",
+      "trainingConfidence": 1.0,
+      "validation": {
+        "conditionCount": 44,
+        "supportCount": 44,
+        "confidence": 1.0,
+        "totalCount": 375,
+        "resultCount": 46,
+        "support": 0.11733333333333333,
+        "lift": 8.152173913043478,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 147,
+      "sampleViolations": 0,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C024",
+                "operator": "IS_NULL"
+              },
+              {
+                "column": "C024",
+                "operator": "!=",
+                "value": "고등학교"
+              }
+            ]
+          },
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C024",
+                "operator": "IS_NULL"
+              },
+              {
+                "column": "C024",
+                "operator": "!=",
+                "value": "대학교"
+              }
+            ]
+          },
+          {
+            "column": "C024",
+            "operator": "=",
+            "value": "중학교"
+          }
+        ]
+      },
+      "result": {
+        "column": "C023",
+        "operator": "=",
+        "value": "3"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF ((NUMERIC(가구주연령) IS NOT NULL AND 가구주연령 <= 49.5) AND (NUMERIC(가구주연령) IS NOT NULL AND 가구주연령 <= 39.5) AND (NUMERIC(가구주연령) IS NOT NULL AND 가구주연령 <= 29.5)) THEN 가구주연령대 = '20대 이하'",
+      "target": "가구주연령대",
+      "trainingConfidence": 1.0,
+      "validation": {
+        "conditionCount": 29,
+        "supportCount": 28,
+        "confidence": 0.9655172413793104,
+        "totalCount": 375,
+        "resultCount": 30,
+        "support": 0.07466666666666667,
+        "lift": 12.068965517241379,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 121,
+      "sampleViolations": 1,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "operator": "AND",
+            "conditions": [
+              {
+                "column": "C021",
+                "operator": "NOT_NULL",
+                "numericText": true
+              },
+              {
+                "column": "C021",
+                "operator": "<=",
+                "value": 49.5,
+                "valueType": "BINARY_FLOAT",
+                "numericText": true
+              }
+            ]
+          },
+          {
+            "operator": "AND",
+            "conditions": [
+              {
+                "column": "C021",
+                "operator": "NOT_NULL",
+                "numericText": true
+              },
+              {
+                "column": "C021",
+                "operator": "<=",
+                "value": 39.5,
+                "valueType": "BINARY_FLOAT",
+                "numericText": true
+              }
+            ]
+          },
+          {
+            "operator": "AND",
+            "conditions": [
+              {
+                "column": "C021",
+                "operator": "NOT_NULL",
+                "numericText": true
+              },
+              {
+                "column": "C021",
+                "operator": "<=",
+                "value": 29.5,
+                "valueType": "BINARY_FLOAT",
+                "numericText": true
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "column": "C022",
+        "operator": "=",
+        "value": "20대 이하"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF ((시도코드 IS NULL OR 시도코드 != 'R09') AND (시도코드 IS NULL OR 시도코드 != 'R01') AND 시도코드 = 'R02') THEN 시도명 = '부산광역시'",
+      "target": "시도명",
+      "trainingConfidence": 1.0,
+      "validation": {
+        "conditionCount": 24,
+        "supportCount": 24,
+        "confidence": 1.0,
+        "totalCount": 375,
+        "resultCount": 24,
+        "support": 0.064,
+        "lift": 15.625,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 105,
+      "sampleViolations": 0,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C005",
+                "operator": "IS_NULL"
+              },
+              {
+                "column": "C005",
+                "operator": "!=",
+                "value": "R09"
+              }
+            ]
+          },
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C005",
+                "operator": "IS_NULL"
+              },
+              {
+                "column": "C005",
+                "operator": "!=",
+                "value": "R01"
+              }
+            ]
+          },
+          {
+            "column": "C005",
+            "operator": "=",
+            "value": "R02"
+          }
+        ]
+      },
+      "result": {
+        "column": "C006",
+        "operator": "=",
+        "value": "부산광역시"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF ((교육수준 IS NULL OR 교육수준 != '고등학교') AND (교육수준 IS NULL OR 교육수준 != '대학교') AND (교육수준 IS NULL OR 교육수준 != '중학교') AND 교육수준 = '초등학교') THEN 교육수준코드 = '2'",
+      "target": "교육수준코드",
+      "trainingConfidence": 1.0,
+      "validation": {
+        "conditionCount": 29,
+        "supportCount": 29,
+        "confidence": 1.0,
+        "totalCount": 375,
+        "resultCount": 29,
+        "support": 0.07733333333333334,
+        "lift": 12.93103448275862,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 109,
+      "sampleViolations": 0,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C024",
+                "operator": "IS_NULL"
+              },
+              {
+                "column": "C024",
+                "operator": "!=",
+                "value": "고등학교"
+              }
+            ]
+          },
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C024",
+                "operator": "IS_NULL"
+              },
+              {
+                "column": "C024",
+                "operator": "!=",
+                "value": "대학교"
+              }
+            ]
+          },
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C024",
+                "operator": "IS_NULL"
+              },
+              {
+                "column": "C024",
+                "operator": "!=",
+                "value": "중학교"
+              }
+            ]
+          },
+          {
+            "column": "C024",
+            "operator": "=",
+            "value": "초등학교"
+          }
+        ]
+      },
+      "result": {
+        "column": "C023",
+        "operator": "=",
+        "value": "2"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF ((교육수준코드 IS NULL OR 교육수준코드 != '4') AND (교육수준코드 IS NULL OR 교육수준코드 != '5') AND (교육수준코드 IS NULL OR 교육수준코드 != '3') AND 교육수준코드 = '2') THEN 교육수준 = '초등학교'",
+      "target": "교육수준",
+      "trainingConfidence": 1.0,
+      "validation": {
+        "conditionCount": 29,
+        "supportCount": 29,
+        "confidence": 1.0,
+        "totalCount": 375,
+        "resultCount": 29,
+        "support": 0.07733333333333334,
+        "lift": 12.93103448275862,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 109,
+      "sampleViolations": 0,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C023",
+                "operator": "IS_NULL"
+              },
+              {
+                "column": "C023",
+                "operator": "!=",
+                "value": "4"
+              }
+            ]
+          },
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C023",
+                "operator": "IS_NULL"
+              },
+              {
+                "column": "C023",
+                "operator": "!=",
+                "value": "5"
+              }
+            ]
+          },
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C023",
+                "operator": "IS_NULL"
+              },
+              {
+                "column": "C023",
+                "operator": "!=",
+                "value": "3"
+              }
+            ]
+          },
+          {
+            "column": "C023",
+            "operator": "=",
+            "value": "2"
+          }
+        ]
+      },
+      "result": {
+        "column": "C024",
+        "operator": "=",
+        "value": "초등학교"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF (NUMERIC(주당근로시간) IS NULL AND 종사상지위 = '실업자') THEN 경제활동상태 = '실업'",
+      "target": "경제활동상태",
+      "trainingConfidence": 1.0,
+      "validation": {
+        "conditionCount": 16,
+        "supportCount": 16,
+        "confidence": 1.0,
+        "totalCount": 375,
+        "resultCount": 18,
+        "support": 0.042666666666666665,
+        "lift": 20.833333333333332,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 65,
+      "sampleViolations": 0,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "column": "C033",
+            "operator": "IS_NULL",
+            "numericText": true
+          },
+          {
+            "column": "C025",
+            "operator": "=",
+            "value": "실업자"
+          }
+        ]
+      },
+      "result": {
+        "column": "C026",
+        "operator": "=",
+        "value": "실업"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF 교육수준 = '고등학교' THEN 교육수준코드 = '4'",
+      "target": "교육수준코드",
+      "trainingConfidence": 0.9976359338061466,
+      "validation": {
+        "conditionCount": 138,
+        "supportCount": 136,
+        "confidence": 0.9855072463768116,
+        "totalCount": 375,
+        "resultCount": 136,
+        "support": 0.3626666666666667,
+        "lift": 2.717391304347826,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 561,
+      "sampleViolations": 3,
+      "condition": {
+        "column": "C024",
+        "operator": "=",
+        "value": "고등학교"
+      },
+      "result": {
+        "column": "C023",
+        "operator": "=",
+        "value": "4"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF 시도명 = '경기도' THEN 시도코드 = 'R09'",
+      "target": "시도코드",
+      "trainingConfidence": 0.9964788732394366,
+      "validation": {
+        "conditionCount": 98,
+        "supportCount": 98,
+        "confidence": 1.0,
+        "totalCount": 375,
+        "resultCount": 100,
+        "support": 0.2613333333333333,
+        "lift": 3.75,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 382,
+      "sampleViolations": 1,
+      "condition": {
+        "column": "C006",
+        "operator": "=",
+        "value": "경기도"
+      },
+      "result": {
+        "column": "C005",
+        "operator": "=",
+        "value": "R09"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF ((시도코드 IS NULL OR 시도코드 != 'R09') AND 시도코드 = 'R01') THEN 시도명 = '서울특별시'",
+      "target": "시도명",
+      "trainingConfidence": 0.995475113122172,
+      "validation": {
+        "conditionCount": 70,
+        "supportCount": 70,
+        "confidence": 1.0,
+        "totalCount": 375,
+        "resultCount": 70,
+        "support": 0.18666666666666668,
+        "lift": 5.357142857142857,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 291,
+      "sampleViolations": 1,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C005",
+                "operator": "IS_NULL"
+              },
+              {
+                "column": "C005",
+                "operator": "!=",
+                "value": "R09"
+              }
+            ]
+          },
+          {
+            "column": "C005",
+            "operator": "=",
+            "value": "R01"
+          }
+        ]
+      },
+      "result": {
+        "column": "C006",
+        "operator": "=",
+        "value": "서울특별시"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF ((시도명 IS NULL OR 시도명 != '경기도') AND 시도명 = '서울특별시') THEN 시도코드 = 'R01'",
+      "target": "시도코드",
+      "trainingConfidence": 0.995475113122172,
+      "validation": {
+        "conditionCount": 70,
+        "supportCount": 70,
+        "confidence": 1.0,
+        "totalCount": 375,
+        "resultCount": 70,
+        "support": 0.18666666666666668,
+        "lift": 5.357142857142857,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 291,
+      "sampleViolations": 1,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C006",
+                "operator": "IS_NULL"
+              },
+              {
+                "column": "C006",
+                "operator": "!=",
+                "value": "경기도"
+              }
+            ]
+          },
+          {
+            "column": "C006",
+            "operator": "=",
+            "value": "서울특별시"
+          }
+        ]
+      },
+      "result": {
+        "column": "C005",
+        "operator": "=",
+        "value": "R01"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF 도시농촌구분 = '도시' THEN 행정구역유형 = '동부'",
+      "target": "행정구역유형",
+      "trainingConfidence": 0.9950124688279302,
+      "validation": {
+        "conditionCount": 275,
+        "supportCount": 272,
+        "confidence": 0.9890909090909091,
+        "totalCount": 375,
+        "resultCount": 273,
+        "support": 0.7253333333333334,
+        "lift": 1.3586413586413588,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 1077,
+      "sampleViolations": 7,
+      "condition": {
+        "column": "C008",
+        "operator": "=",
+        "value": "도시"
+      },
+      "result": {
+        "column": "C007",
+        "operator": "=",
+        "value": "동부"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF ((NUMERIC(가구주연령) IS NOT NULL AND 가구주연령 <= 49.5) AND (NUMERIC(가구주연령) IS NOT NULL AND 가구주연령 <= 39.5) AND (NUMERIC(가구주연령) IS NULL OR (NUMERIC(가구주연령) IS NOT NULL AND 가구주연령 > 29.5))) THEN 가구주연령대 = '30대'",
+      "target": "가구주연령대",
+      "trainingConfidence": 0.9945652173913043,
+      "validation": {
+        "conditionCount": 45,
+        "supportCount": 44,
+        "confidence": 0.9777777777777777,
+        "totalCount": 375,
+        "resultCount": 45,
+        "support": 0.11733333333333333,
+        "lift": 8.148148148148149,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 229,
+      "sampleViolations": 2,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "operator": "AND",
+            "conditions": [
+              {
+                "column": "C021",
+                "operator": "NOT_NULL",
+                "numericText": true
+              },
+              {
+                "column": "C021",
+                "operator": "<=",
+                "value": 49.5,
+                "valueType": "BINARY_FLOAT",
+                "numericText": true
+              }
+            ]
+          },
+          {
+            "operator": "AND",
+            "conditions": [
+              {
+                "column": "C021",
+                "operator": "NOT_NULL",
+                "numericText": true
+              },
+              {
+                "column": "C021",
+                "operator": "<=",
+                "value": 39.5,
+                "valueType": "BINARY_FLOAT",
+                "numericText": true
+              }
+            ]
+          },
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C021",
+                "operator": "IS_NULL",
+                "numericText": true
+              },
+              {
+                "operator": "AND",
+                "conditions": [
+                  {
+                    "column": "C021",
+                    "operator": "NOT_NULL",
+                    "numericText": true
+                  },
+                  {
+                    "column": "C021",
+                    "operator": ">",
+                    "value": 29.5,
+                    "valueType": "BINARY_FLOAT",
+                    "numericText": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "column": "C022",
+        "operator": "=",
+        "value": "30대"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF ((NUMERIC(월근로소득_만원) IS NOT NULL AND 월근로소득_만원 <= 17.5) AND (경제활동상태 IS NULL OR 경제활동상태 != '비경제활동') AND 산업분류 IS NOT NULL AND (NUMERIC(월사업소득_만원) IS NOT NULL AND 월사업소득_만원 > 127.5)) THEN 종사상지위 = '자영업자'",
+      "target": "종사상지위",
+      "trainingConfidence": 0.9932432432432432,
+      "validation": {
+        "conditionCount": 64,
+        "supportCount": 63,
+        "confidence": 0.984375,
+        "totalCount": 375,
+        "resultCount": 71,
+        "support": 0.168,
+        "lift": 5.199163732394366,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 212,
+      "sampleViolations": 2,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "operator": "AND",
+            "conditions": [
+              {
+                "column": "C034",
+                "operator": "NOT_NULL",
+                "numericText": true
+              },
+              {
+                "column": "C034",
+                "operator": "<=",
+                "value": 17.5,
+                "valueType": "BINARY_FLOAT",
+                "numericText": true
+              }
+            ]
+          },
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C026",
+                "operator": "IS_NULL"
+              },
+              {
+                "column": "C026",
+                "operator": "!=",
+                "value": "비경제활동"
+              }
+            ]
+          },
+          {
+            "column": "C027",
+            "operator": "NOT_NULL"
+          },
+          {
+            "operator": "AND",
+            "conditions": [
+              {
+                "column": "C035",
+                "operator": "NOT_NULL",
+                "numericText": true
+              },
+              {
+                "column": "C035",
+                "operator": ">",
+                "value": 127.5,
+                "valueType": "BINARY_FLOAT",
+                "numericText": true
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "column": "C025",
+        "operator": "=",
+        "value": "자영업자"
+      }
+    },
+    {
+      "kind": "VALUE",
+      "text": "IF ((NUMERIC(가구주연령) IS NULL OR (NUMERIC(가구주연령) IS NOT NULL AND 가구주연령 > 49.5)) AND (NUMERIC(가구주연령) IS NULL OR (NUMERIC(가구주연령) IS NOT NULL AND 가구주연령 <= 59.5))) THEN 가구주연령대 = '50대'",
+      "target": "가구주연령대",
+      "trainingConfidence": 0.9918032786885246,
+      "validation": {
+        "conditionCount": 93,
+        "supportCount": 92,
+        "confidence": 0.989247311827957,
+        "totalCount": 375,
+        "resultCount": 94,
+        "support": 0.24533333333333332,
+        "lift": 3.9464653397391904,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION"
+      },
+      "appliedSampleRows": 337,
+      "sampleViolations": 3,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C021",
+                "operator": "IS_NULL",
+                "numericText": true
+              },
+              {
+                "operator": "AND",
+                "conditions": [
+                  {
+                    "column": "C021",
+                    "operator": "NOT_NULL",
+                    "numericText": true
+                  },
+                  {
+                    "column": "C021",
+                    "operator": ">",
+                    "value": 49.5,
+                    "valueType": "BINARY_FLOAT",
+                    "numericText": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "operator": "OR",
+            "conditions": [
+              {
+                "column": "C021",
+                "operator": "IS_NULL",
+                "numericText": true
+              },
+              {
+                "operator": "AND",
+                "conditions": [
+                  {
+                    "column": "C021",
+                    "operator": "NOT_NULL",
+                    "numericText": true
+                  },
+                  {
+                    "column": "C021",
+                    "operator": "<=",
+                    "value": 59.5,
+                    "valueType": "BINARY_FLOAT",
+                    "numericText": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "result": {
+        "column": "C022",
+        "operator": "=",
+        "value": "50대"
+      }
+    },
+    {
+      "kind": "FORMULA",
+      "text": "IF NUMERIC(연간가구소득_만원) IS NOT NULL THEN 월총소득_만원 ≈ (연간가구소득_만원 / 12) ± 3.00204306e-12",
+      "target": "월총소득_만원",
+      "trainingConfidence": 0.9857651245551602,
+      "validation": {
+        "conditionCount": 375,
+        "supportCount": 369,
+        "totalCount": 375,
+        "resultCount": null,
+        "lift": null,
+        "confidence": 0.984,
+        "support": 0.984,
+        "r2": 0.9955776720869797,
+        "inlierR2": 1.0,
+        "mae": 1.6,
+        "rmse": 12.649110640673516,
+        "normalizedMae": 0.004923076923076923,
+        "finiteActualCount": 375,
+        "missingActualCount": 0,
+        "invalidNumericTextCount": 0,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION",
+        "metricKind": "FORMULA_WITHIN_TOLERANCE",
+        "absoluteTolerance": 3.0020430585864233e-12,
+        "relativeTolerance": 0.0,
+        "targetTrainingIqr": 325.0,
+        "toleranceFraction": 9.237055564881303e-15,
+        "train": {
+          "conditionCount": 843,
+          "supportCount": 831,
+          "totalCount": 843,
+          "resultCount": null,
+          "lift": null,
+          "confidence": 0.9857651245551602,
+          "support": 0.9857651245551602,
+          "r2": 0.9959028675607589,
+          "inlierR2": 1.0,
+          "mae": 1.4234875444839856,
+          "rmse": 11.930999725437871,
+          "normalizedMae": 0.0043799616753353405,
+          "finiteActualCount": 843,
+          "missingActualCount": 0,
+          "invalidNumericTextCount": 0
+        },
+        "calibration": {
+          "conditionCount": 282,
+          "supportCount": 276,
+          "totalCount": 282,
+          "resultCount": null,
+          "lift": null,
+          "confidence": 0.9787234042553191,
+          "support": 0.9787234042553191,
+          "r2": 0.9941324296072747,
+          "inlierR2": 1.0,
+          "mae": 2.127659574468085,
+          "rmse": 14.586499149789455,
+          "normalizedMae": 0.006546644844517185,
+          "finiteActualCount": 282,
+          "missingActualCount": 0,
+          "invalidNumericTextCount": 0
+        },
+        "discoveryMethod": "ROBUST_LINEAR",
+        "coefficientPolicy": "CANONICAL_SIMPLE",
+        "selectionMetric": "TRAIN_FIT_RELATIVE_P90_ERROR",
+        "selectionError": 0.0,
+        "numericalToleranceFloor": 3.0020430585864233e-12
+      },
+      "appliedSampleRows": 1500,
+      "sampleViolations": 24,
+      "condition": {
+        "column": "C039",
+        "operator": "NOT_NULL",
+        "numericText": true
+      },
+      "result": {
+        "operator": "WITHIN_TOLERANCE",
+        "column": "C038",
+        "expression": {
+          "operator": "DIVIDE",
+          "left": {
+            "column": "C039",
+            "numericText": true
+          },
+          "right": {
+            "value": 12
+          }
+        },
+        "absoluteTolerance": 3.0020430585864233e-12,
+        "relativeTolerance": 0.0,
+        "numericText": true
+      }
+    },
+    {
+      "kind": "FORMULA",
+      "text": "IF NUMERIC(월총소득_만원) IS NOT NULL THEN 연간가구소득_만원 ≈ (12 * 월총소득_만원) ± 3.60245167e-11",
+      "target": "연간가구소득_만원",
+      "trainingConfidence": 0.9857651245551602,
+      "validation": {
+        "conditionCount": 375,
+        "supportCount": 369,
+        "totalCount": 375,
+        "resultCount": null,
+        "lift": null,
+        "confidence": 0.984,
+        "support": 0.984,
+        "r2": 0.9955857486857645,
+        "inlierR2": 1.0,
+        "mae": 19.2,
+        "rmse": 151.7893276880822,
+        "normalizedMae": 0.004923076923076923,
+        "finiteActualCount": 375,
+        "missingActualCount": 0,
+        "invalidNumericTextCount": 0,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION",
+        "metricKind": "FORMULA_WITHIN_TOLERANCE",
+        "absoluteTolerance": 3.602451670303708e-11,
+        "relativeTolerance": 0.0,
+        "targetTrainingIqr": 3900.0,
+        "toleranceFraction": 9.237055564881303e-15,
+        "train": {
+          "conditionCount": 843,
+          "supportCount": 831,
+          "totalCount": 843,
+          "resultCount": null,
+          "lift": null,
+          "confidence": 0.9857651245551602,
+          "support": 0.9857651245551602,
+          "r2": 0.9958915167673908,
+          "inlierR2": 1.0,
+          "mae": 17.081850533807827,
+          "rmse": 143.17199670525446,
+          "normalizedMae": 0.0043799616753353405,
+          "finiteActualCount": 843,
+          "missingActualCount": 0,
+          "invalidNumericTextCount": 0
+        },
+        "calibration": {
+          "conditionCount": 282,
+          "supportCount": 276,
+          "totalCount": 282,
+          "resultCount": null,
+          "lift": null,
+          "confidence": 0.9787234042553191,
+          "support": 0.9787234042553191,
+          "r2": 0.9940600789314405,
+          "inlierR2": 1.0,
+          "mae": 25.53191489361702,
+          "rmse": 175.03798979747347,
+          "normalizedMae": 0.006546644844517185,
+          "finiteActualCount": 282,
+          "missingActualCount": 0,
+          "invalidNumericTextCount": 0
+        },
+        "discoveryMethod": "ROBUST_LINEAR",
+        "coefficientPolicy": "CANONICAL_SIMPLE",
+        "selectionMetric": "TRAIN_FIT_RELATIVE_P90_ERROR",
+        "selectionError": 0.0,
+        "numericalToleranceFloor": 3.602451670303708e-11
+      },
+      "appliedSampleRows": 1500,
+      "sampleViolations": 24,
+      "condition": {
+        "column": "C038",
+        "operator": "NOT_NULL",
+        "numericText": true
+      },
+      "result": {
+        "operator": "WITHIN_TOLERANCE",
+        "column": "C039",
+        "expression": {
+          "operator": "MULTIPLY",
+          "left": {
+            "value": 12.0
+          },
+          "right": {
+            "column": "C038",
+            "numericText": true
+          }
+        },
+        "absoluteTolerance": 3.602451670303708e-11,
+        "relativeTolerance": 0.0,
+        "numericText": true
+      }
+    },
+    {
+      "kind": "FORMULA",
+      "text": "IF (NUMERIC(가처분소득_만원) IS NOT NULL AND NUMERIC(가구원수) IS NOT NULL AND 가구원수 > 0) THEN 균등화가처분소득_만원 ≈ (가처분소득_만원 / sqrt(가구원수)) ± 0.075500196",
+      "target": "균등화가처분소득_만원",
+      "trainingConfidence": 0.9833926453143536,
+      "validation": {
+        "conditionCount": 375,
+        "supportCount": 369,
+        "totalCount": 375,
+        "resultCount": null,
+        "lift": null,
+        "confidence": 0.984,
+        "support": 0.984,
+        "r2": 0.9411502806859112,
+        "inlierR2": 0.999999959073176,
+        "mae": 4.017454199586847,
+        "rmse": 31.624501990926134,
+        "normalizedMae": 0.02142642239779652,
+        "finiteActualCount": 375,
+        "missingActualCount": 0,
+        "invalidNumericTextCount": 0,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION",
+        "metricKind": "FORMULA_WITHIN_TOLERANCE",
+        "absoluteTolerance": 0.07550019603111113,
+        "relativeTolerance": 0.0,
+        "targetTrainingIqr": 187.5,
+        "toleranceFraction": 0.00040266771216592606,
+        "train": {
+          "conditionCount": 843,
+          "supportCount": 829,
+          "totalCount": 843,
+          "resultCount": null,
+          "lift": null,
+          "confidence": 0.9833926453143536,
+          "support": 0.9833926453143536,
+          "r2": 0.9420812889031595,
+          "inlierR2": 0.9999999650511155,
+          "mae": 4.167679498932716,
+          "rmse": 32.21669825738264,
+          "normalizedMae": 0.02222762399430782,
+          "finiteActualCount": 843,
+          "missingActualCount": 0,
+          "invalidNumericTextCount": 0
+        },
+        "calibration": {
+          "conditionCount": 282,
+          "supportCount": 281,
+          "totalCount": 282,
+          "resultCount": null,
+          "lift": null,
+          "confidence": 0.9964539007092199,
+          "support": 0.9964539007092199,
+          "r2": 0.9860788569768738,
+          "inlierR2": 0.9999999565830069,
+          "mae": 0.9042415065330776,
+          "rmse": 14.887305298976282,
+          "normalizedMae": 0.004822621368176414,
+          "finiteActualCount": 282,
+          "missingActualCount": 0,
+          "invalidNumericTextCount": 0
+        },
+        "discoveryMethod": "ROBUST_SQRT_RATIO",
+        "coefficientPolicy": "CANONICAL_SIMPLE",
+        "selectionMetric": "TRAIN_FIT_RELATIVE_P90_ERROR",
+        "selectionError": 0.00026286317663210267,
+        "numericalToleranceFloor": 2.1966428676023496e-12
+      },
+      "appliedSampleRows": 1500,
+      "sampleViolations": 21,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "column": "C041",
+            "operator": "NOT_NULL",
+            "numericText": true
+          },
+          {
+            "column": "C018",
+            "operator": "NOT_NULL",
+            "numericText": true
+          },
+          {
+            "column": "C018",
+            "operator": ">",
+            "value": 0,
+            "valueType": "NUMBER",
+            "numericText": true
+          }
+        ]
+      },
+      "result": {
+        "operator": "WITHIN_TOLERANCE",
+        "column": "C051",
+        "expression": {
+          "operator": "DIVIDE",
+          "left": {
+            "column": "C041",
+            "numericText": true
+          },
+          "right": {
+            "operator": "SQRT",
+            "operand": {
+              "column": "C018",
+              "numericText": true
+            }
+          }
+        },
+        "absoluteTolerance": 0.07550019603111113,
+        "relativeTolerance": 0.0,
+        "numericText": true
+      }
+    },
+    {
+      "kind": "FORMULA",
+      "text": "IF (NUMERIC(월총소득_만원) IS NOT NULL AND NUMERIC(세금사회보험료_만원) IS NOT NULL) THEN 가처분소득_만원 ≈ (월총소득_만원 - 세금사회보험료_만원) ± 3.51256801e-12",
+      "target": "가처분소득_만원",
+      "trainingConfidence": 0.9833926453143536,
+      "validation": {
+        "conditionCount": 375,
+        "supportCount": 363,
+        "totalCount": 375,
+        "resultCount": null,
+        "lift": null,
+        "confidence": 0.968,
+        "support": 0.968,
+        "r2": 0.9969430092228262,
+        "inlierR2": 1.0,
+        "mae": 1.6,
+        "rmse": 8.94427190999916,
+        "normalizedMae": 0.0056667256950593235,
+        "finiteActualCount": 375,
+        "missingActualCount": 0,
+        "invalidNumericTextCount": 0,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION",
+        "metricKind": "FORMULA_WITHIN_TOLERANCE",
+        "absoluteTolerance": 3.5125680142300554e-12,
+        "relativeTolerance": 0.0,
+        "targetTrainingIqr": 282.35,
+        "toleranceFraction": 1.2440474638675599e-14,
+        "train": {
+          "conditionCount": 843,
+          "supportCount": 829,
+          "totalCount": 843,
+          "resultCount": null,
+          "lift": null,
+          "confidence": 0.9833926453143536,
+          "support": 0.9833926453143536,
+          "r2": 0.9983945118538992,
+          "inlierR2": 1.0,
+          "mae": 0.830367734282325,
+          "rmse": 6.443476291111518,
+          "normalizedMae": 0.002940916360128652,
+          "finiteActualCount": 843,
+          "missingActualCount": 0,
+          "invalidNumericTextCount": 0
+        },
+        "calibration": {
+          "conditionCount": 282,
+          "supportCount": 277,
+          "totalCount": 282,
+          "resultCount": null,
+          "lift": null,
+          "confidence": 0.9822695035460993,
+          "support": 0.9822695035460993,
+          "r2": 0.9983419086554565,
+          "inlierR2": 1.0,
+          "mae": 0.8865248226950355,
+          "rmse": 6.657795516141343,
+          "normalizedMae": 0.003139808120046168,
+          "finiteActualCount": 282,
+          "missingActualCount": 0,
+          "invalidNumericTextCount": 0
+        },
+        "discoveryMethod": "SUM_DIFFERENCE",
+        "coefficientPolicy": "CANONICAL_SIMPLE",
+        "selectionMetric": "TRAIN_FIT_RELATIVE_P90_ERROR",
+        "selectionError": 0.0,
+        "numericalToleranceFloor": 3.5125680142300554e-12
+      },
+      "appliedSampleRows": 1500,
+      "sampleViolations": 31,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "column": "C038",
+            "operator": "NOT_NULL",
+            "numericText": true
+          },
+          {
+            "column": "C040",
+            "operator": "NOT_NULL",
+            "numericText": true
+          }
+        ]
+      },
+      "result": {
+        "operator": "WITHIN_TOLERANCE",
+        "column": "C041",
+        "expression": {
+          "operator": "SUBTRACT",
+          "left": {
+            "column": "C038",
+            "numericText": true
+          },
+          "right": {
+            "column": "C040",
+            "numericText": true
+          }
+        },
+        "absoluteTolerance": 3.5125680142300554e-12,
+        "relativeTolerance": 0.0,
+        "numericText": true
+      }
+    },
+    {
+      "kind": "FORMULA",
+      "text": "IF (NUMERIC(월총소득_만원) IS NOT NULL AND NUMERIC(가처분소득_만원) IS NOT NULL) THEN 세금사회보험료_만원 ≈ (월총소득_만원 - 가처분소득_만원) ± 5.49356116e-12",
+      "target": "세금사회보험료_만원",
+      "trainingConfidence": 0.9833926453143536,
+      "validation": {
+        "conditionCount": 375,
+        "supportCount": 363,
+        "totalCount": 375,
+        "resultCount": null,
+        "lift": null,
+        "confidence": 0.968,
+        "support": 0.968,
+        "r2": 0.9109624644184243,
+        "inlierR2": 1.0,
+        "mae": 1.6000000000000096,
+        "rmse": 8.944271909999157,
+        "normalizedMae": 0.03985056039850584,
+        "finiteActualCount": 375,
+        "missingActualCount": 0,
+        "invalidNumericTextCount": 0,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION",
+        "metricKind": "FORMULA_WITHIN_TOLERANCE",
+        "absoluteTolerance": 5.4935611615292144e-12,
+        "relativeTolerance": 0.0,
+        "targetTrainingIqr": 40.150000000000006,
+        "toleranceFraction": 1.3682593179400283e-13,
+        "train": {
+          "conditionCount": 843,
+          "supportCount": 829,
+          "totalCount": 843,
+          "resultCount": null,
+          "lift": null,
+          "confidence": 0.9833926453143536,
+          "support": 0.9833926453143536,
+          "r2": 0.9441134860197539,
+          "inlierR2": 1.0,
+          "mae": 0.8303677342823347,
+          "rmse": 6.44347629111152,
+          "normalizedMae": 0.020681637217492766,
+          "finiteActualCount": 843,
+          "missingActualCount": 0,
+          "invalidNumericTextCount": 0
+        },
+        "calibration": {
+          "conditionCount": 282,
+          "supportCount": 277,
+          "totalCount": 282,
+          "resultCount": null,
+          "lift": null,
+          "confidence": 0.9822695035460993,
+          "support": 0.9822695035460993,
+          "r2": 0.9481871985205359,
+          "inlierR2": 1.0,
+          "mae": 0.8865248226950454,
+          "rmse": 6.657795516141343,
+          "normalizedMae": 0.022080319369739608,
+          "finiteActualCount": 282,
+          "missingActualCount": 0,
+          "invalidNumericTextCount": 0
+        },
+        "discoveryMethod": "SUM_DIFFERENCE",
+        "coefficientPolicy": "CANONICAL_SIMPLE",
+        "selectionMetric": "TRAIN_FIT_RELATIVE_P90_ERROR",
+        "selectionError": 5.309161163836365e-16,
+        "numericalToleranceFloor": 5.4935611615292144e-12
+      },
+      "appliedSampleRows": 1500,
+      "sampleViolations": 31,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "column": "C038",
+            "operator": "NOT_NULL",
+            "numericText": true
+          },
+          {
+            "column": "C041",
+            "operator": "NOT_NULL",
+            "numericText": true
+          }
+        ]
+      },
+      "result": {
+        "operator": "WITHIN_TOLERANCE",
+        "column": "C040",
+        "expression": {
+          "operator": "SUBTRACT",
+          "left": {
+            "column": "C038",
+            "numericText": true
+          },
+          "right": {
+            "column": "C041",
+            "numericText": true
+          }
+        },
+        "absoluteTolerance": 5.4935611615292144e-12,
+        "relativeTolerance": 0.0,
+        "numericText": true
+      }
+    },
+    {
+      "kind": "FORMULA",
+      "text": "IF (NUMERIC(월사업소득_만원) IS NOT NULL AND NUMERIC(월이전소득_만원) IS NOT NULL AND NUMERIC(월기타소득_만원) IS NOT NULL AND NUMERIC(월총소득_만원) IS NOT NULL) THEN 월근로소득_만원 ≈ (((월총소득_만원 - 월사업소득_만원) - 월이전소득_만원) - 월기타소득_만원) ± 6.59028387e-12",
+      "target": "월근로소득_만원",
+      "trainingConfidence": 0.9833926453143536,
+      "validation": {
+        "conditionCount": 375,
+        "supportCount": 363,
+        "totalCount": 375,
+        "resultCount": null,
+        "lift": null,
+        "confidence": 0.968,
+        "support": 0.968,
+        "r2": 0.997833416873569,
+        "inlierR2": 1.0,
+        "mae": 1.6,
+        "rmse": 8.94427190999916,
+        "normalizedMae": 0.005079365079365079,
+        "finiteActualCount": 375,
+        "missingActualCount": 0,
+        "invalidNumericTextCount": 0,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION",
+        "metricKind": "FORMULA_WITHIN_TOLERANCE",
+        "absoluteTolerance": 6.590283874174929e-12,
+        "relativeTolerance": 0.0,
+        "targetTrainingIqr": 315.0,
+        "toleranceFraction": 2.092153610849184e-14,
+        "train": {
+          "conditionCount": 843,
+          "supportCount": 829,
+          "totalCount": 843,
+          "resultCount": null,
+          "lift": null,
+          "confidence": 0.9833926453143536,
+          "support": 0.9833926453143536,
+          "r2": 0.9987440046816252,
+          "inlierR2": 1.0,
+          "mae": 0.8303677342823249,
+          "rmse": 6.443476291111519,
+          "normalizedMae": 0.002636088045340714,
+          "finiteActualCount": 843,
+          "missingActualCount": 0,
+          "invalidNumericTextCount": 0
+        },
+        "calibration": {
+          "conditionCount": 282,
+          "supportCount": 277,
+          "totalCount": 282,
+          "resultCount": null,
+          "lift": null,
+          "confidence": 0.9822695035460993,
+          "support": 0.9822695035460993,
+          "r2": 0.998684353791299,
+          "inlierR2": 1.0,
+          "mae": 0.8865248226950355,
+          "rmse": 6.657795516141343,
+          "normalizedMae": 0.002814364516492176,
+          "finiteActualCount": 282,
+          "missingActualCount": 0,
+          "invalidNumericTextCount": 0
+        },
+        "discoveryMethod": "SUM_DIFFERENCE",
+        "coefficientPolicy": "CANONICAL_SIMPLE",
+        "selectionMetric": "TRAIN_FIT_RELATIVE_P90_ERROR",
+        "selectionError": 0.0,
+        "numericalToleranceFloor": 6.590283874174929e-12
+      },
+      "appliedSampleRows": 1500,
+      "sampleViolations": 31,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "column": "C035",
+            "operator": "NOT_NULL",
+            "numericText": true
+          },
+          {
+            "column": "C036",
+            "operator": "NOT_NULL",
+            "numericText": true
+          },
+          {
+            "column": "C037",
+            "operator": "NOT_NULL",
+            "numericText": true
+          },
+          {
+            "column": "C038",
+            "operator": "NOT_NULL",
+            "numericText": true
+          }
+        ]
+      },
+      "result": {
+        "operator": "WITHIN_TOLERANCE",
+        "column": "C034",
+        "expression": {
+          "operator": "SUBTRACT",
+          "left": {
+            "operator": "SUBTRACT",
+            "left": {
+              "operator": "SUBTRACT",
+              "left": {
+                "column": "C038",
+                "numericText": true
+              },
+              "right": {
+                "column": "C035",
+                "numericText": true
+              }
+            },
+            "right": {
+              "column": "C036",
+              "numericText": true
+            }
+          },
+          "right": {
+            "column": "C037",
+            "numericText": true
+          }
+        },
+        "absoluteTolerance": 6.590283874174929e-12,
+        "relativeTolerance": 0.0,
+        "numericText": true
+      }
+    },
+    {
+      "kind": "FORMULA",
+      "text": "IF (NUMERIC(가처분소득_만원) IS NOT NULL AND NUMERIC(월저축액_만원) IS NOT NULL) THEN 월총지출_만원 ≈ (가처분소득_만원 - 월저축액_만원) ± 4.12541112e-12",
+      "target": "월총지출_만원",
+      "trainingConfidence": 0.9822064056939501,
+      "validation": {
+        "conditionCount": 375,
+        "supportCount": 368,
+        "totalCount": 375,
+        "resultCount": null,
+        "lift": null,
+        "confidence": 0.9813333333333333,
+        "support": 0.9813333333333333,
+        "r2": 0.9770429703696731,
+        "inlierR2": 1.0,
+        "mae": 1.4000000000000046,
+        "rmse": 10.2469507659596,
+        "normalizedMae": 0.015384615384615434,
+        "finiteActualCount": 375,
+        "missingActualCount": 0,
+        "invalidNumericTextCount": 0,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION",
+        "metricKind": "FORMULA_WITHIN_TOLERANCE",
+        "absoluteTolerance": 4.125411123823141e-12,
+        "relativeTolerance": 0.0,
+        "targetTrainingIqr": 91.0,
+        "toleranceFraction": 4.533418817388067e-14,
+        "train": {
+          "conditionCount": 843,
+          "supportCount": 828,
+          "totalCount": 843,
+          "resultCount": null,
+          "lift": null,
+          "confidence": 0.9822064056939501,
+          "support": 0.9822064056939501,
+          "r2": 0.9770571616265391,
+          "inlierR2": 1.0,
+          "mae": 1.3345195729537398,
+          "rmse": 10.004447409603904,
+          "normalizedMae": 0.014665050252238899,
+          "finiteActualCount": 843,
+          "missingActualCount": 0,
+          "invalidNumericTextCount": 0
+        },
+        "calibration": {
+          "conditionCount": 282,
+          "supportCount": 279,
+          "totalCount": 282,
+          "resultCount": null,
+          "lift": null,
+          "confidence": 0.9893617021276596,
+          "support": 0.9893617021276596,
+          "r2": 0.9875730316640537,
+          "inlierR2": 1.0,
+          "mae": 0.7978723404255349,
+          "rmse": 7.735659346940951,
+          "normalizedMae": 0.00876782791676412,
+          "finiteActualCount": 282,
+          "missingActualCount": 0,
+          "invalidNumericTextCount": 0
+        },
+        "discoveryMethod": "SUM_DIFFERENCE",
+        "coefficientPolicy": "CANONICAL_SIMPLE",
+        "selectionMetric": "TRAIN_FIT_RELATIVE_P90_ERROR",
+        "selectionError": 3.123264772571869e-16,
+        "numericalToleranceFloor": 4.125411123823141e-12
+      },
+      "appliedSampleRows": 1500,
+      "sampleViolations": 25,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "column": "C041",
+            "operator": "NOT_NULL",
+            "numericText": true
+          },
+          {
+            "column": "C049",
+            "operator": "NOT_NULL",
+            "numericText": true
+          }
+        ]
+      },
+      "result": {
+        "operator": "WITHIN_TOLERANCE",
+        "column": "C048",
+        "expression": {
+          "operator": "SUBTRACT",
+          "left": {
+            "column": "C041",
+            "numericText": true
+          },
+          "right": {
+            "column": "C049",
+            "numericText": true
+          }
+        },
+        "absoluteTolerance": 4.125411123823141e-12,
+        "relativeTolerance": 0.0,
+        "numericText": true
+      }
+    },
+    {
+      "kind": "FORMULA",
+      "text": "IF (NUMERIC(가처분소득_만원) IS NOT NULL AND NUMERIC(월총지출_만원) IS NOT NULL) THEN 월저축액_만원 ≈ (가처분소득_만원 - 월총지출_만원) ± 4.54853932e-12",
+      "target": "월저축액_만원",
+      "trainingConfidence": 0.9822064056939501,
+      "validation": {
+        "conditionCount": 375,
+        "supportCount": 368,
+        "totalCount": 375,
+        "resultCount": null,
+        "lift": null,
+        "confidence": 0.9813333333333333,
+        "support": 0.9813333333333333,
+        "r2": 0.9964324430641059,
+        "inlierR2": 1.0,
+        "mae": 1.4000000000000092,
+        "rmse": 10.2469507659596,
+        "normalizedMae": 0.005196733481811468,
+        "finiteActualCount": 375,
+        "missingActualCount": 0,
+        "invalidNumericTextCount": 0,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION",
+        "metricKind": "FORMULA_WITHIN_TOLERANCE",
+        "absoluteTolerance": 4.548539322968281e-12,
+        "relativeTolerance": 0.0,
+        "targetTrainingIqr": 269.4,
+        "toleranceFraction": 1.6883961852146555e-14,
+        "train": {
+          "conditionCount": 843,
+          "supportCount": 828,
+          "totalCount": 843,
+          "resultCount": null,
+          "lift": null,
+          "confidence": 0.9822064056939501,
+          "support": 0.9822064056939501,
+          "r2": 0.9963708174921557,
+          "inlierR2": 1.0,
+          "mae": 1.3345195729537438,
+          "rmse": 10.004447409603904,
+          "normalizedMae": 0.004953673247786726,
+          "finiteActualCount": 843,
+          "missingActualCount": 0,
+          "invalidNumericTextCount": 0
+        },
+        "calibration": {
+          "conditionCount": 282,
+          "supportCount": 279,
+          "totalCount": 282,
+          "resultCount": null,
+          "lift": null,
+          "confidence": 0.9893617021276596,
+          "support": 0.9893617021276596,
+          "r2": 0.9979098375800411,
+          "inlierR2": 1.0,
+          "mae": 0.79787234042554,
+          "rmse": 7.735659346940951,
+          "normalizedMae": 0.00296166421835761,
+          "finiteActualCount": 282,
+          "missingActualCount": 0,
+          "invalidNumericTextCount": 0
+        },
+        "discoveryMethod": "SUM_DIFFERENCE",
+        "coefficientPolicy": "CANONICAL_SIMPLE",
+        "selectionMetric": "TRAIN_FIT_RELATIVE_P90_ERROR",
+        "selectionError": 1.0550003500521162e-16,
+        "numericalToleranceFloor": 4.548539322968281e-12
+      },
+      "appliedSampleRows": 1500,
+      "sampleViolations": 25,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "column": "C041",
+            "operator": "NOT_NULL",
+            "numericText": true
+          },
+          {
+            "column": "C048",
+            "operator": "NOT_NULL",
+            "numericText": true
+          }
+        ]
+      },
+      "result": {
+        "operator": "WITHIN_TOLERANCE",
+        "column": "C049",
+        "expression": {
+          "operator": "SUBTRACT",
+          "left": {
+            "column": "C041",
+            "numericText": true
+          },
+          "right": {
+            "column": "C048",
+            "numericText": true
+          }
+        },
+        "absoluteTolerance": 4.548539322968281e-12,
+        "relativeTolerance": 0.0,
+        "numericText": true
+      }
+    },
+    {
+      "kind": "FORMULA",
+      "text": "IF (NUMERIC(균등화가처분소득_만원) IS NOT NULL AND NUMERIC(가구원수) IS NOT NULL AND 가구원수 > 0) THEN 1인당가처분소득_만원 ≈ (균등화가처분소득_만원 / sqrt(가구원수)) ± 0.0721303879",
+      "target": "1인당가처분소득_만원",
+      "trainingConfidence": 0.9644128113879004,
+      "validation": {
+        "conditionCount": 375,
+        "supportCount": 361,
+        "totalCount": 375,
+        "resultCount": null,
+        "lift": null,
+        "confidence": 0.9626666666666667,
+        "support": 0.9626666666666667,
+        "r2": 0.9829973320391677,
+        "inlierR2": 0.9999999590065636,
+        "mae": 2.0813556292254582,
+        "rmse": 16.714341117855234,
+        "normalizedMae": 0.014091778126103304,
+        "finiteActualCount": 375,
+        "missingActualCount": 0,
+        "invalidNumericTextCount": 0,
+        "status": "VALIDATED",
+        "source": "SELECTION_VALIDATION",
+        "metricKind": "FORMULA_WITHIN_TOLERANCE",
+        "absoluteTolerance": 0.0721303878627732,
+        "relativeTolerance": 0.0,
+        "targetTrainingIqr": 147.70000000000002,
+        "toleranceFraction": 0.0004883573992063182,
+        "train": {
+          "conditionCount": 843,
+          "supportCount": 813,
+          "totalCount": 843,
+          "resultCount": null,
+          "lift": null,
+          "confidence": 0.9644128113879004,
+          "support": 0.9644128113879004,
+          "r2": 0.9629204326939148,
+          "inlierR2": 0.9999999619473329,
+          "mae": 3.138302163276835,
+          "rmse": 25.361673621166474,
+          "normalizedMae": 0.021247814240195225,
+          "finiteActualCount": 843,
+          "missingActualCount": 0,
+          "invalidNumericTextCount": 0
+        },
+        "calibration": {
+          "conditionCount": 282,
+          "supportCount": 275,
+          "totalCount": 282,
+          "resultCount": null,
+          "lift": null,
+          "confidence": 0.975177304964539,
+          "support": 0.975177304964539,
+          "r2": 0.984546136411653,
+          "inlierR2": 0.9999999504285149,
+          "mae": 0.9052083921269128,
+          "rmse": 14.887310933467774,
+          "normalizedMae": 0.006128695952111799,
+          "finiteActualCount": 282,
+          "missingActualCount": 0,
+          "invalidNumericTextCount": 0
+        },
+        "discoveryMethod": "ROBUST_SQRT_RATIO",
+        "coefficientPolicy": "CANONICAL_SIMPLE",
+        "selectionMetric": "TRAIN_FIT_RELATIVE_P90_ERROR",
+        "selectionError": 0.0003385240352065044,
+        "numericalToleranceFloor": 2.4144242161128205e-12
+      },
+      "appliedSampleRows": 1500,
+      "sampleViolations": 51,
+      "condition": {
+        "operator": "AND",
+        "conditions": [
+          {
+            "column": "C051",
+            "operator": "NOT_NULL",
+            "numericText": true
+          },
+          {
+            "column": "C018",
+            "operator": "NOT_NULL",
+            "numericText": true
+          },
+          {
+            "column": "C018",
+            "operator": ">",
+            "value": 0,
+            "valueType": "NUMBER",
+            "numericText": true
+          }
+        ]
+      },
+      "result": {
+        "operator": "WITHIN_TOLERANCE",
+        "column": "C050",
+        "expression": {
+          "operator": "DIVIDE",
+          "left": {
+            "column": "C051",
+            "numericText": true
+          },
+          "right": {
+            "operator": "SQRT",
+            "operand": {
+              "column": "C018",
+              "numericText": true
+            }
+          }
+        },
+        "absoluteTolerance": 0.0721303878627732,
+        "relativeTolerance": 0.0,
+        "numericText": true
+      }
+    }
+  ],
+  "metrics": {
+    "inputCount": 1500,
+    "sampleCount": 1500,
+    "trainCount": 1125,
+    "trainRows": 1125,
+    "holdoutCount": 375,
+    "holdoutRows": 375,
+    "validationRows": 375,
+    "ruleCount": 32,
+    "candidateRuleCount": 35,
+    "fittedTargetCount": 24,
+    "fittedTargets": [
+      "C003",
+      "C005",
+      "C006",
+      "C007",
+      "C008",
+      "C012",
+      "C013",
+      "C014",
+      "C015",
+      "C016",
+      "C017",
+      "C018",
+      "C019",
+      "C020",
+      "C021",
+      "C022",
+      "C023",
+      "C024",
+      "C025",
+      "C026",
+      "C027",
+      "C028",
+      "C029",
+      "C030"
+    ],
+    "rejectedRules": {
+      "trainEvidence": 157,
+      "validationEvidence": 2
+    },
+    "randomSeed": 42,
+    "validationSource": "SELECTION_VALIDATION",
+    "hasGroundTruth": false,
+    "continuous": {
+      "diagnosticVersion": 1,
+      "enabled": true,
+      "status": "RULES_AVAILABLE",
+      "sourceColumnCount": 55,
+      "physicalNumericColumnCount": 0,
+      "inferredNumericTextColumnCount": 32,
+      "numericColumnCount": 31,
+      "targetCount": 12,
+      "attemptedTargetCount": 12,
+      "targets": [
+        "C038",
+        "C040",
+        "C041",
+        "C048",
+        "C049",
+        "C039",
+        "C034",
+        "C051",
+        "C042",
+        "C050",
+        "C032",
+        "C053"
+      ],
+      "eligibleTargetCount": 26,
+      "excludedTargets": [
+        "C047",
+        "C021",
+        "C044",
+        "C052",
+        "C045",
+        "C046",
+        "C043",
+        "C035",
+        "C036",
+        "C033",
+        "C037",
+        "C031",
+        "C016",
+        "C054"
+      ],
+      "excludedColumns": [
+        {
+          "column": "C001",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C002",
+          "physicalType": "VARCHAR2",
+          "reason": "CONSTANT_NUMERIC_VALUES",
+          "fitDistinctCount": 1
+        },
+        {
+          "column": "C004",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C005",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C006",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C007",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C008",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C009",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C010",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C011",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C012",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C013",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C014",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C015",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C017",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C019",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C020",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C022",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C024",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C025",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C026",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C027",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 584,
+          "numericCount": 0,
+          "invalidCount": 584,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 259,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C028",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C055",
+          "physicalType": "VARCHAR2",
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 814,
+          "numericCount": 0,
+          "invalidCount": 814,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 29,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        }
+      ],
+      "columnInference": [
+        {
+          "column": "C001",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C002",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 1,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 1
+        },
+        {
+          "column": "C003",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 4,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 4
+        },
+        {
+          "column": "C004",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C005",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C006",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C007",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C008",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C009",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C010",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C011",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C012",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C013",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C014",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C015",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C016",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 31,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 31
+        },
+        {
+          "column": "C017",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C018",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 7,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 7
+        },
+        {
+          "column": "C019",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C020",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C021",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 71,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 71
+        },
+        {
+          "column": "C022",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C023",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 6,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 6
+        },
+        {
+          "column": "C024",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C025",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C026",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C027",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 584,
+          "numericCount": 0,
+          "invalidCount": 584,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 259,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C028",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 843,
+          "numericCount": 0,
+          "invalidCount": 843,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        },
+        {
+          "column": "C029",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 5,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 5
+        },
+        {
+          "column": "C030",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 5,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 5
+        },
+        {
+          "column": "C031",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 17,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 17
+        },
+        {
+          "column": "C032",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 584,
+          "numericCount": 584,
+          "invalidCount": 0,
+          "distinctCount": 141,
+          "leadingZeroCount": 0,
+          "missingCount": 259,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 584,
+          "fitDistinctCount": 141
+        },
+        {
+          "column": "C033",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 584,
+          "numericCount": 584,
+          "invalidCount": 0,
+          "distinctCount": 73,
+          "leadingZeroCount": 0,
+          "missingCount": 259,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 584,
+          "fitDistinctCount": 73
+        },
+        {
+          "column": "C034",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 107,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 107
+        },
+        {
+          "column": "C035",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 83,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 83
+        },
+        {
+          "column": "C036",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 27,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 27
+        },
+        {
+          "column": "C037",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 31,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 31
+        },
+        {
+          "column": "C038",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 142,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 142
+        },
+        {
+          "column": "C039",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 142,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 142
+        },
+        {
+          "column": "C040",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 141,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 141
+        },
+        {
+          "column": "C041",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 140,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 140
+        },
+        {
+          "column": "C042",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 135,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 135
+        },
+        {
+          "column": "C043",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 116,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 116
+        },
+        {
+          "column": "C044",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 75,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 75
+        },
+        {
+          "column": "C045",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 48,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 48
+        },
+        {
+          "column": "C046",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 56,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 56
+        },
+        {
+          "column": "C047",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 72,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 72
+        },
+        {
+          "column": "C048",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 249,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 249
+        },
+        {
+          "column": "C049",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 781,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 781
+        },
+        {
+          "column": "C050",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 375,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 375
+        },
+        {
+          "column": "C051",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 438,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 438
+        },
+        {
+          "column": "C052",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 505,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 505
+        },
+        {
+          "column": "C053",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 190,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 190
+        },
+        {
+          "column": "C054",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": true,
+          "reason": null,
+          "nonNullCount": 843,
+          "numericCount": 843,
+          "invalidCount": 0,
+          "distinctCount": 294,
+          "leadingZeroCount": 0,
+          "missingCount": 0,
+          "numericRatio": 1.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY",
+          "effectiveType": "NUMERIC_TEXT",
+          "invalidTextAssessment": {
+            "fit": 0,
+            "calibration": 0,
+            "validation": 0
+          },
+          "fitNonNullCount": 843,
+          "fitDistinctCount": 294
+        },
+        {
+          "column": "C055",
+          "physicalType": "VARCHAR2",
+          "fitSource": "TRAIN_FIT",
+          "eligible": false,
+          "reason": "NON_NUMERIC_TEXT",
+          "nonNullCount": 814,
+          "numericCount": 0,
+          "invalidCount": 814,
+          "distinctCount": 0,
+          "leadingZeroCount": 0,
+          "missingCount": 29,
+          "numericRatio": 0.0,
+          "minimumNumericRatio": 0.98,
+          "inferencePolicy": "STRICT_NUMERIC_MAJORITY"
+        }
+      ],
+      "eligibilityReasons": {
+        "NON_NUMERIC_TEXT": 23,
+        "CONSTANT_NUMERIC_VALUES": 1,
+        "LOW_CARDINALITY_TARGET": 5
+      },
+      "rejectionReasons": {
+        "TRAIN_COVERAGE_BELOW_MINIMUM": 33,
+        "VALIDATION_COVERAGE_BELOW_MINIMUM": 26,
+        "TOLERANCE_TOO_WIDE": 545,
+        "CONDITIONAL_GAIN_TOO_SMALL": 91,
+        "CONDITIONAL_VALIDATION_GAIN_TOO_SMALL": 91,
+        "INSUFFICIENT_FIT_OR_CALIBRATION_ROWS": 1
+      },
+      "targetDiagnostics": [
+        {
+          "column": "C003",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 4,
+          "status": "PREDICTOR_ONLY",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "reason": "LOW_CARDINALITY_TARGET",
+          "unitPairScreenError": 0.7716666666666666
+        },
+        {
+          "column": "C016",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 31,
+          "status": "CAPPED",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "unitPairScreenError": 1.0410958904109588,
+          "reason": "CONTINUOUS_TARGET_LIMIT"
+        },
+        {
+          "column": "C018",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 7,
+          "status": "PREDICTOR_ONLY",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "reason": "LOW_CARDINALITY_TARGET",
+          "unitPairScreenError": 0.8325000000000001
+        },
+        {
+          "column": "C021",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 71,
+          "status": "CAPPED",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "unitPairScreenError": 0.7835051546391752,
+          "reason": "CONTINUOUS_TARGET_LIMIT"
+        },
+        {
+          "column": "C023",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 6,
+          "status": "PREDICTOR_ONLY",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "reason": "LOW_CARDINALITY_TARGET",
+          "unitPairScreenError": 2.0
+        },
+        {
+          "column": "C029",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 5,
+          "status": "PREDICTOR_ONLY",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "reason": "LOW_CARDINALITY_TARGET",
+          "unitPairScreenError": 0.9650000000000001
+        },
+        {
+          "column": "C030",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 5,
+          "status": "PREDICTOR_ONLY",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "reason": "LOW_CARDINALITY_TARGET",
+          "unitPairScreenError": 1.9300000000000002
+        },
+        {
+          "column": "C031",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 17,
+          "status": "CAPPED",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "unitPairScreenError": 1.0724999999999998,
+          "reason": "CONTINUOUS_TARGET_LIMIT"
+        },
+        {
+          "column": "C032",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 141,
+          "status": "REJECTED",
+          "proposalCount": 96,
+          "fittedModelCount": 96,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {
+            "TOLERANCE_TOO_WIDE": 96
+          },
+          "unitPairScreenError": 0.8852830188679244,
+          "unitCandidateCount": 0
+        },
+        {
+          "column": "C033",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 73,
+          "status": "CAPPED",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "unitPairScreenError": 0.9486363636363638,
+          "reason": "CONTINUOUS_TARGET_LIMIT"
+        },
+        {
+          "column": "C034",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 107,
+          "status": "ACCEPTED",
+          "proposalCount": 60,
+          "fittedModelCount": 60,
+          "acceptedRuleCount": 1,
+          "rejectionReasons": {
+            "TOLERANCE_TOO_WIDE": 37,
+            "TRAIN_COVERAGE_BELOW_MINIMUM": 7,
+            "VALIDATION_COVERAGE_BELOW_MINIMUM": 7,
+            "CONDITIONAL_GAIN_TOO_SMALL": 11,
+            "CONDITIONAL_VALIDATION_GAIN_TOO_SMALL": 11
+          },
+          "unitPairScreenError": 0.22727272727272727,
+          "unitCandidateCount": 16,
+          "redundantGroupCount": 3
+        },
+        {
+          "column": "C035",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 83,
+          "status": "CAPPED",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "unitPairScreenError": 6.115555555555555,
+          "reason": "CONTINUOUS_TARGET_LIMIT"
+        },
+        {
+          "column": "C036",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 27,
+          "status": "CAPPED",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "unitPairScreenError": 0.9714285714285714,
+          "reason": "CONTINUOUS_TARGET_LIMIT"
+        },
+        {
+          "column": "C037",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 31,
+          "status": "CAPPED",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "unitPairScreenError": 1.2390909090909092,
+          "reason": "CONTINUOUS_TARGET_LIMIT"
+        },
+        {
+          "column": "C038",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 142,
+          "status": "ACCEPTED",
+          "proposalCount": 26,
+          "fittedModelCount": 26,
+          "acceptedRuleCount": 1,
+          "rejectionReasons": {
+            "TRAIN_COVERAGE_BELOW_MINIMUM": 1,
+            "VALIDATION_COVERAGE_BELOW_MINIMUM": 1,
+            "TOLERANCE_TOO_WIDE": 5
+          },
+          "unitPairScreenError": 0.0,
+          "unitCandidateCount": 8,
+          "redundantGroupCount": 4
+        },
+        {
+          "column": "C039",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 142,
+          "status": "ACCEPTED",
+          "proposalCount": 21,
+          "fittedModelCount": 21,
+          "acceptedRuleCount": 1,
+          "rejectionReasons": {
+            "TRAIN_COVERAGE_BELOW_MINIMUM": 1,
+            "VALIDATION_COVERAGE_BELOW_MINIMUM": 1,
+            "TOLERANCE_TOO_WIDE": 5
+          },
+          "unitPairScreenError": 0.7395538057742782,
+          "unitCandidateCount": 0,
+          "redundantGroupCount": 4
+        },
+        {
+          "column": "C040",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 141,
+          "status": "ACCEPTED",
+          "proposalCount": 54,
+          "fittedModelCount": 54,
+          "acceptedRuleCount": 1,
+          "rejectionReasons": {
+            "TOLERANCE_TOO_WIDE": 29,
+            "CONDITIONAL_GAIN_TOO_SMALL": 11,
+            "CONDITIONAL_VALIDATION_GAIN_TOO_SMALL": 11
+          },
+          "unitPairScreenError": 5.369340572494459e-16,
+          "unitCandidateCount": 16,
+          "redundantGroupCount": 3
+        },
+        {
+          "column": "C041",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 140,
+          "status": "ACCEPTED",
+          "proposalCount": 58,
+          "fittedModelCount": 58,
+          "acceptedRuleCount": 1,
+          "rejectionReasons": {
+            "TRAIN_COVERAGE_BELOW_MINIMUM": 10,
+            "VALIDATION_COVERAGE_BELOW_MINIMUM": 6,
+            "TOLERANCE_TOO_WIDE": 6,
+            "CONDITIONAL_GAIN_TOO_SMALL": 29,
+            "CONDITIONAL_VALIDATION_GAIN_TOO_SMALL": 29
+          },
+          "unitPairScreenError": 0.0,
+          "unitCandidateCount": 16,
+          "redundantGroupCount": 3
+        },
+        {
+          "column": "C042",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 135,
+          "status": "REJECTED",
+          "proposalCount": 80,
+          "fittedModelCount": 80,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {
+            "TOLERANCE_TOO_WIDE": 80
+          },
+          "unitPairScreenError": 0.8325581395348837,
+          "unitCandidateCount": 0
+        },
+        {
+          "column": "C043",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 116,
+          "status": "CAPPED",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "unitPairScreenError": 1.067142857142857,
+          "reason": "CONTINUOUS_TARGET_LIMIT"
+        },
+        {
+          "column": "C044",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 75,
+          "status": "CAPPED",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "unitPairScreenError": 1.1153846153846154,
+          "reason": "CONTINUOUS_TARGET_LIMIT"
+        },
+        {
+          "column": "C045",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 48,
+          "status": "CAPPED",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "unitPairScreenError": 1.0714285714285714,
+          "reason": "CONTINUOUS_TARGET_LIMIT"
+        },
+        {
+          "column": "C046",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 56,
+          "status": "CAPPED",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "unitPairScreenError": 1.1929824561403508,
+          "reason": "CONTINUOUS_TARGET_LIMIT"
+        },
+        {
+          "column": "C047",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 72,
+          "status": "CAPPED",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "unitPairScreenError": 1.095890410958904,
+          "reason": "CONTINUOUS_TARGET_LIMIT"
+        },
+        {
+          "column": "C048",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 249,
+          "status": "ACCEPTED",
+          "proposalCount": 60,
+          "fittedModelCount": 60,
+          "acceptedRuleCount": 1,
+          "rejectionReasons": {
+            "TOLERANCE_TOO_WIDE": 42,
+            "CONDITIONAL_GAIN_TOO_SMALL": 9,
+            "CONDITIONAL_VALIDATION_GAIN_TOO_SMALL": 9,
+            "TRAIN_COVERAGE_BELOW_MINIMUM": 1
+          },
+          "unitPairScreenError": 3.0726172357193523e-16,
+          "unitCandidateCount": 16,
+          "redundantGroupCount": 3
+        },
+        {
+          "column": "C049",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 781,
+          "status": "ACCEPTED",
+          "proposalCount": 60,
+          "fittedModelCount": 60,
+          "acceptedRuleCount": 1,
+          "rejectionReasons": {
+            "TOLERANCE_TOO_WIDE": 25,
+            "CONDITIONAL_GAIN_TOO_SMALL": 18,
+            "CONDITIONAL_VALIDATION_GAIN_TOO_SMALL": 18,
+            "TRAIN_COVERAGE_BELOW_MINIMUM": 2
+          },
+          "unitPairScreenError": 1.163751025914792e-16,
+          "unitCandidateCount": 16,
+          "redundantGroupCount": 3
+        },
+        {
+          "column": "C050",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 375,
+          "status": "ACCEPTED",
+          "proposalCount": 100,
+          "fittedModelCount": 100,
+          "acceptedRuleCount": 1,
+          "rejectionReasons": {
+            "TOLERANCE_TOO_WIDE": 85,
+            "TRAIN_COVERAGE_BELOW_MINIMUM": 10,
+            "VALIDATION_COVERAGE_BELOW_MINIMUM": 10,
+            "CONDITIONAL_GAIN_TOO_SMALL": 12,
+            "CONDITIONAL_VALIDATION_GAIN_TOO_SMALL": 12
+          },
+          "unitPairScreenError": 0.42063492063492075,
+          "unitCandidateCount": 0
+        },
+        {
+          "column": "C051",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 438,
+          "status": "ACCEPTED",
+          "proposalCount": 40,
+          "fittedModelCount": 40,
+          "acceptedRuleCount": 1,
+          "rejectionReasons": {
+            "TOLERANCE_TOO_WIDE": 37,
+            "TRAIN_COVERAGE_BELOW_MINIMUM": 1,
+            "VALIDATION_COVERAGE_BELOW_MINIMUM": 1,
+            "CONDITIONAL_GAIN_TOO_SMALL": 1,
+            "CONDITIONAL_VALIDATION_GAIN_TOO_SMALL": 1
+          },
+          "unitPairScreenError": 0.34993924665856624,
+          "unitCandidateCount": 0,
+          "redundantGroupCount": 3
+        },
+        {
+          "column": "C052",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 505,
+          "status": "CAPPED",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "unitPairScreenError": 1.4918276374442796,
+          "reason": "CONTINUOUS_TARGET_LIMIT"
+        },
+        {
+          "column": "C053",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 190,
+          "status": "REJECTED",
+          "proposalCount": 99,
+          "fittedModelCount": 98,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {
+            "TOLERANCE_TOO_WIDE": 98,
+            "INSUFFICIENT_FIT_OR_CALIBRATION_ROWS": 1
+          },
+          "unitPairScreenError": 1.526011560693643,
+          "unitCandidateCount": 0
+        },
+        {
+          "column": "C054",
+          "physicalType": "VARCHAR2",
+          "numericText": true,
+          "fitDistinctCount": 294,
+          "status": "CAPPED",
+          "proposalCount": 0,
+          "fittedModelCount": 0,
+          "acceptedRuleCount": 0,
+          "rejectionReasons": {},
+          "unitPairScreenError": 2.7473309608540926,
+          "reason": "CONTINUOUS_TARGET_LIMIT"
+        }
+      ],
+      "testedCandidateCount": 754,
+      "fittedCandidateCount": 753,
+      "acceptedRuleCount": 9,
+      "targetSelection": "TRAIN_ONLY_UNIT_IDENTITIES_THEN_NUMERIC_VARIATION_AND_RELATION_STRENGTH",
+      "varyingNumericPriorityMinDistinct": 16,
+      "unitSearch": {
+        "maxTerms": 6,
+        "sampleRows": 256,
+        "beamWidth": 12,
+        "candidateLimitPerCohort": 8,
+        "fitSource": "TRAIN_FIT"
+      },
+      "ratioSearch": {
+        "sampleRows": 256,
+        "maxNumerators": 6,
+        "denominatorPolicy": "ALL_ELIGIBLE_NUMERIC_PREDICTORS",
+        "candidateLimitPerKind": 2,
+        "sqrtEnabled": true,
+        "fitSource": "TRAIN_FIT"
+      },
+      "conditionalSearch": {
+        "maxGroupsPerTarget": 4,
+        "minimumCoverageGain": 0.05,
+        "alreadyExplainedCoverage": 0.98,
+        "groupSelectionSource": "TRAIN_FIT",
+        "deduplicatedBy": "TRAIN_GROUP_MEMBERSHIP",
+        "scopePolicy": "EXCLUDE_VALIDATED_ALTERNATIVE_GROUPS_FROM_GLOBAL"
+      },
+      "fitRows": 843,
+      "calibrationRows": 282,
+      "validationRows": 375,
+      "ruleCount": 9,
+      "candidateRuleCount": 9,
+      "minFormulaConfidence": 0.95,
+      "minFormulaValidationConfidence": 0.9,
+      "minFormulaR2": 0.9,
+      "maxToleranceFraction": 0.05,
+      "fitSource": "TRAIN_FIT",
+      "toleranceSource": "CALIBRATION",
+      "validationSource": "SELECTION_VALIDATION",
+      "r2AcceptanceMetric": "INLIER_R2_WITH_COVERAGE_AND_TOLERANCE_GUARDS",
+      "publishedRuleCount": 9,
+      "globalRuleLimit": 32,
+      "globalRuleLimitDroppedCount": 0
+    },
+    "formulaRuleCount": 9,
+    "minConfidence": 0.99,
+    "minValidationConfidence": 0.9,
+    "minConditionCount": 20,
+    "minValidationCount": 10,
+    "minLift": 1.01,
+    "minConfidenceGain": 0.01,
+    "confidenceMeaning": "P_ACTUAL_THEN_GIVEN_IF_IN_STATED_COHORT",
+    "nullTargetPolicy": "VIOLATION_OF_NONMISSING_EXPECTATION"
+  },
+  "warnings": [
+    "VALIDATION_USED_FOR_RULE_SELECTION",
+    "FORMULA_TOLERANCE_CALIBRATED_SEPARATELY",
+    "CONTINUOUS_TARGET_COLUMN_LIMIT",
+    "NUMERIC_TEXT_INTERPRETED_WITH_EXPLICIT_SAFE_CONVERSION",
+    "TARGET_COLUMN_LIMIT",
+    "RULE_LIMIT"
+  ],
+  "scope": "CPU offline engine; VARCHAR2 original strings; disagreements are not confirmed errors"
+}

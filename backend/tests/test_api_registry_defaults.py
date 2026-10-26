@@ -162,6 +162,36 @@ class ApiRegistryDefaultsTests(unittest.TestCase):
                 defaults.build_web_api_job_request(self.db, stage, sort_order=1, **SCOPE)
         self.assertEqual(409, raised.exception.status_code)
 
+    def test_formula_options_round_trip_through_registered_and_builtin_jobs(self):
+        from backend.services import integrated_editing_service as integrated
+        from backend.services import ml_analysis_service as ml
+        for stage, prefix in ((defaults.UNIFIED_STAGES[2], "P_MIXED_"),
+                              (defaults.MIXED_XAI_STAGES[2], "P_")):
+            with self.subTest(model=stage["modelName"]):
+                builtin = {row["PARAM_NAME"]: row["DEFAULT_VALUE"]
+                           for row in defaults.load_builtin_api_resource_rows(stage)}
+                self.assertEqual("false", builtin[prefix + "FORMULA_SQRT_ENABLED"])
+                self.assertEqual("3", builtin[prefix + "MAX_FORMULA_FEATURES"])
+                registration = self.payload(stage)
+                for row in registration.details:
+                    if row["key"] == "INPUT." + prefix + "FORMULA_SQRT_ENABLED":
+                        row["defaultValue"] = "true"
+                    if row["key"] == "INPUT." + prefix + "MAX_FORMULA_FEATURES":
+                        row["defaultValue"] = "8"
+                self.save(registration)
+                with patch.object(defaults, "execute_query", side_effect=self.db.query):
+                    request = defaults.build_web_api_job_request(self.db, stage, sort_order=1, **SCOPE)
+                job_id = jobs.save_job(self.db, stage["menuCode"], request)
+                with patch.object(jobs, "execute_query", side_effect=self.db.query):
+                    saved = jobs.load_job(self.db, stage["menuCode"], job_id)
+                self.assertEqual(request.params, saved["PARAMS"])
+                payload = ml.build_payload(saved, {"INIT$TargetOwner": "APP_OWNER",
+                    "INIT$TargetTable": "SOURCE_DATA", "INIT$RunSourceType": "FLOW_WORK", "INIT$RunId": 41}, 41)
+                if prefix == "P_MIXED_":
+                    _, _, payload = integrated._payloads(payload)
+                self.assertEqual("true", str(payload["P_FORMULA_SQRT_ENABLED"]).lower())
+                self.assertEqual(8, int(payload["P_MAX_FORMULA_FEATURES"]))
+
     def test_create_only_is_idempotent_but_explicit_edit_still_updates(self):
         stage = defaults.UNIFIED_STAGES[0]
         first = self.save(self.payload(stage))

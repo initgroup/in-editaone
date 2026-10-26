@@ -30,7 +30,7 @@ _MIXED_OPTIONS = {
     "minSamplesLeaf", "maxTargets", "maxRules", "minConfidence",
     "minValidationConfidence", "minValidationCount", "minLift", "minConfidenceGain",
     "targetColumns", "continuousEnabled", "maxContinuousTargets", "maxContinuousRules",
-    "maxFormulaFeatures", "minFormulaConfidence", "minFormulaValidationConfidence",
+    "maxFormulaFeatures", "formulaSqrtEnabled", "minFormulaConfidence", "minFormulaValidationConfidence",
     "minFormulaR2", "maxToleranceFraction", "maxViolationRows", "samplingStrategy", "sampleSeed",
 }
 _RESOURCE_KEYS = {"APP_ML_MAX_IN_MEMORY_ROWS", "APP_ML_MAX_INPUT_FEATURES"}

@@ -41,6 +41,21 @@ test("two result families retain composite identity and exclude historical expla
     assert.equal(JSON.stringify(data), before);
 });
 
+test("family counts use the selected discovery method and the default method of the other family", () => {
+    const renderer = view(), data = payload([]);
+    data.summary.sourceCounts.push({family:"FORMULA", source:"MIXED_PATTERN", ruleCount:5, status:"available"});
+    const mixed = renderer.render(data, {source:"MIXED_PATTERN", defaultSource:"MIXED_PATTERN"});
+    assert.match(mixed, /data-editing-family="CONDITION"[^>]*>.*?201 rules<\/span>/);
+    assert.match(mixed, /data-editing-family="FORMULA"[^>]*>.*?5 rules<\/span>/);
+    assert.doesNotMatch(mixed, /401 rules|30 rules/);
+    const all = renderer.render(data, {source:"ALL", defaultSource:"MIXED_PATTERN"});
+    assert.match(all, /data-editing-family="CONDITION"[^>]*>.*?401 rules<\/span>/);
+    assert.match(all, /data-editing-family="FORMULA"[^>]*>.*?5 rules<\/span>/);
+    data.summary.sourceCounts[1].ruleCount = null;
+    data.summary.sourceCounts[1].status = "unavailable";
+    assert.doesNotMatch(renderer.render(data, {source:"MIXED_PATTERN"}), /201 rules|0 rules/);
+});
+
 test("formula cards preserve canonical expression, application conditions and small tolerances without treating scores as confidence", () => {
     const renderer = view();
     const symbolic = entry("LEGACY_SYMBOLIC", 7, "FORMULA", {EXPRESSION: "TOTAL = LARGE + SMALL", SCORE: 0.95, SELECTED_YN: "N"});
@@ -138,4 +153,16 @@ test("rule labels annotate identifiers without changing quoted values, embedded 
     rule.family = "FORMULA";
     rule.row.EXPRESSION = "TOTAL = AGE + AGE2";
     assert.match(renderer.renderCard(rule), /TOTAL\[합계 &lt;표시&gt;\] = AGE\[연령\] \+ AGE2/);
+});
+
+
+test("violations-only view hides the zero toggle and distinguishes clean discovery from no discovery", () => {
+    const data = payload([]);
+    data.family = "FORMULA";
+    data.summary.sourceCounts.push({family:"FORMULA", source:"MIXED_PATTERN", ruleCount:0, discoveredRuleCount:9, status:"available"});
+    const html = view().render(data, {source:"MIXED_PATTERN", filters:{violationsOnly:true}});
+    assert.doesNotMatch(html, /data-editing-exclude-zero/);
+    assert.doesNotMatch(html, /zero counts last|Discovery diagnostics/);
+    assert.match(html, /No rules with detected violations/);
+    assert.match(html, /Only rules with detected violations/);
 });

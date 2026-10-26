@@ -193,11 +193,25 @@ class IntegratedEditingTests(unittest.TestCase):
         self.assertEqual("10", legacy["P_MAX_AUTO_TARGETS"])
         self.assertEqual("16", mixed["P_MAX_CONTINUOUS_TARGETS"])
         self.assertEqual("true", mixed["P_CONTINUOUS_ENABLED"])
+        self.assertEqual("3", mixed["P_MAX_FORMULA_FEATURES"])
+        self.assertEqual("false", mixed["P_FORMULA_SQRT_ENABLED"])
         self.assertEqual("50000", legacy["P_SAMPLE_ROWS"])
         self.assertEqual("50000", mixed["P_SAMPLE_ROWS"])
         self.assertEqual("HASH", mixed["P_SAMPLING_STRATEGY"])
         self.assertFalse(any(key.startswith("P_MIXED_") for key in legacy))
         self.assertNotIn("P_MAX_AUTO_TARGETS", mixed)
+
+    def test_formula_options_forward_without_changing_legacy_or_saved_defaults(self):
+        for options in ({"P_MIXED_FORMULA_SQRT_ENABLED": "true", "P_MIXED_MAX_FORMULA_FEATURES": 8},
+                        {"mixedOptions": {"formulaSqrtEnabled": True, "maxFormulaFeatures": 8}}):
+            _, legacy, mixed = service._payloads(self.payload(**options))
+            self.assertIn(mixed["P_FORMULA_SQRT_ENABLED"], (True, "true"))
+            self.assertEqual(8, mixed["P_MAX_FORMULA_FEATURES"])
+            self.assertNotIn("P_FORMULA_SQRT_ENABLED", legacy)
+            self.assertNotIn("P_MAX_FORMULA_FEATURES", legacy)
+        old_job_result = service.discover(self.connection(), self.payload())
+        self.assertFalse(old_job_result["mixed"]["options"]["formulaSqrtEnabled"])
+        self.assertEqual(3, old_job_result["mixed"]["options"]["maxFormulaFeatures"])
 
     def test_persisted_summary_keeps_legacy_zero_reasons_separate_from_mixed_formula_and_sample_limits(self):
         db = self.connection()
@@ -259,6 +273,10 @@ class IntegratedEditingTests(unittest.TestCase):
                 param["itemDefault"] = "CATEGORICAL"
             if param["itemName"] == "P_SAMPLING_STRATEGY":
                 param["itemDefault"] = "FIRST_ROWS"
+            if param["itemName"] == "P_MIXED_FORMULA_SQRT_ENABLED":
+                param["itemDefault"] = "true"
+            if param["itemName"] == "P_MIXED_MAX_FORMULA_FEATURES":
+                param["itemDefault"] = "6"
         step = {"nodePayload": {"ownerName": "APP_OWNER", "tableName": "SOURCE_DATA",
                 "resultCreateYn": "T", "resultOwner": "APP_OWNER", "resultTableName": patterns.RULE_TABLE}}
         runtime = flows.build_step_system_bind_values(step, {}, 41)
@@ -270,7 +288,14 @@ class IntegratedEditingTests(unittest.TestCase):
         self.assertNotEqual(runtime["INIT$ResultModelName"], result["modelName"])
         self.assertEqual(.7, db.procedures[0][1][4])
         self.assertEqual(.99, result["mixed"]["options"]["minConfidence"])
+        self.assertTrue(result["mixed"]["options"]["formulaSqrtEnabled"])
+        self.assertEqual(6, result["mixed"]["options"]["maxFormulaFeatures"])
         self.assertEqual(0, db.commits)
+        saved["PARAMS"] = [param for param in saved["PARAMS"]
+                           if param["itemName"] != "P_MIXED_FORMULA_SQRT_ENABLED"]
+        old_execution = api.execute_api_job(self.connection(), saved, runtime, run_id=41, include_result=True)
+        self.assertFalse(old_execution["result"]["mixed"]["options"]["formulaSqrtEnabled"])
+        self.assertEqual(6, old_execution["result"]["mixed"]["options"]["maxFormulaFeatures"])
 
     def test_reexecuting_earlier_stage_invalidates_downstream_success_markers(self):
         db = self.connection()

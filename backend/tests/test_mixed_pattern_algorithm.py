@@ -20,6 +20,14 @@ def ast_columns(predicate):
 
 
 class MixedPatternAlgorithmTests(unittest.TestCase):
+    def test_insufficient_rows_report_actual_count_before_training(self):
+        columns = metadata(("GROUP_CODE", "VARCHAR2"), ("VALUE", "VARCHAR2"))
+        for count in (0, 29, 31):
+            with self.subTest(count=count), self.assertRaisesRegex(
+                ValueError, f"at least 32 data rows after excluding the header; received {count}"
+            ):
+                analyze_pattern_rows([{"GROUP_CODE": "A", "VALUE": str(i)} for i in range(count)], columns)
+
     def pattern_data(self, count=4000):
         rng = np.random.default_rng(127)
         rows = [{"ROW_ID": index + 1, "GROUP_CODE": "01" if index % 2 else "02",

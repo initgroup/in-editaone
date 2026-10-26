@@ -19,12 +19,18 @@ from backend.services.mixed_sparse_formula import (
     UnitFormulaScreen, UNIT_SAMPLE_ROWS, UNIT_BEAM_WIDTH, UNIT_CANDIDATE_LIMIT,
 )
 
+RATIO_SAMPLE_ROWS = 256
+RATIO_NUMERATOR_LIMIT = 6
+RATIO_CANDIDATE_LIMIT = 2
+
 
 def formula_expression_text(expression):
     if "column" in expression:
         return expression["column"]
     if "value" in expression:
         return format(expression["value"], ".15g")
+    if expression.get("operator") == "SQRT":
+        return f"sqrt({formula_expression_text(expression['operand'])})"
     operators = {"ADD": "+", "SUBTRACT": "-", "MULTIPLY": "*", "DIVIDE": "/"}
     return f"({formula_expression_text(expression['left'])} {operators[expression['operator']]} {formula_expression_text(expression['right'])})"
 
@@ -42,6 +48,9 @@ def evaluate_formula_expression(expression, row):
                 value = None if _missing(value) else float(value)
         elif "value" in expression:
             value = float(expression["value"])
+        elif expression.get("operator") == "SQRT":
+            operand = evaluate_formula_expression(expression["operand"], row)
+            value = math.sqrt(operand) if operand is not None and operand >= 0 else None
         else:
             left, right = evaluate_formula_expression(expression["left"], row), evaluate_formula_expression(expression["right"], row)
             if left is None or right is None:
@@ -84,6 +93,16 @@ def formula_result_accepts(predicate, row):
 
 def _binary(operator, left, right):
     return {"operator": operator, "left": left, "right": right}
+
+
+def _expression_columns(expression):
+    if "column" in expression:
+        return {expression["column"]}
+    if "value" in expression:
+        return set()
+    if expression.get("operator") == "SQRT":
+        return _expression_columns(expression["operand"])
+    return _expression_columns(expression["left"]) | _expression_columns(expression["right"])
 
 
 def _finite_array(rows, name, *, numeric_text=False):
@@ -219,6 +238,18 @@ def _canonical_coefficients(matrix, actual, intercept, coefficients, scale):
     baseline = intercept + matrix @ coefficients
     original = np.quantile(np.abs(actual - baseline), [.5, .9])
     floor = max(1e-14, np.finfo(float).eps * 8 * max(float(np.median(np.abs(actual))), float(np.median(np.abs(baseline)))))
+    # Numerical coefficient errors can cancel each other. Rounding one term at
+    # a time may then reject the actual simple identity. Try a fixed set of
+    # joint rational proposals against exactly the same TRAIN_FIT residual gate.
+    for denominator in (1, 2, 4, 6, 12, 24, 60, 100):
+        proposed_coefficients = np.asarray([float(Fraction(float(value)).limit_denominator(denominator)) for value in coefficients])
+        proposed_intercept = float(Fraction(float(intercept)).limit_denominator(denominator))
+        predicted = proposed_intercept + matrix @ proposed_coefficients
+        displacement = float(np.max(np.abs(predicted - baseline)))
+        errors = np.quantile(np.abs(actual - predicted), [.5, .9])
+        if displacement <= floor or np.all(errors <= original + np.maximum(floor, original * .02)):
+            coefficients, intercept = proposed_coefficients, proposed_intercept
+            break
     values = [*coefficients, float(intercept)]
     for index, value in enumerate(values):
         choices = {float(round(value))}
@@ -283,9 +314,76 @@ def _expression_array(expression, numeric):
         return numeric[expression["column"]]
     if "value" in expression:
         return expression["value"]
+    if expression.get("operator") == "SQRT":
+        with np.errstate(invalid="ignore"):
+            return np.sqrt(_expression_array(expression["operand"], numeric))
     left, right = _expression_array(expression["left"], numeric), _expression_array(expression["right"], numeric)
     with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
         return {"ADD": np.add, "SUBTRACT": np.subtract, "MULTIPLY": np.multiply, "DIVIDE": np.divide}[expression["operator"]](left, right)
+
+
+def _ratio_correlations(values, target):
+    """Vectorized clipped correlations for complete columns; retain pairwise NULL policy."""
+    scores = np.zeros(values.shape[1])
+    complete = np.all(np.isfinite(values), axis=0) & bool(np.all(np.isfinite(target)))
+    if np.any(complete) and len(target) >= 20:
+        raw = values[:, complete]
+        magnitudes = np.maximum(np.max(np.abs(raw), axis=0), 1e-300)
+        raw_spread = np.std(raw / magnitudes, axis=0) * magnitudes
+        clipped = np.clip(raw, *np.quantile(raw, [.02, .98], axis=0)) / magnitudes
+        centered = clipped - clipped.mean(axis=0)
+        right = np.clip(target, *np.quantile(target, [.02, .98]))
+        right_scale = max(float(np.max(np.abs(right))), 1e-300)
+        right = right / right_scale
+        right -= right.mean()
+        denominator = np.sqrt(np.sum(centered ** 2, axis=0) * np.sum(right ** 2))
+        eligible = ((raw_spread > 1e-15) & (np.std(clipped, axis=0) * magnitudes > 1e-15)
+                    & (np.std(target) > 1e-15) & (np.std(right) * right_scale > 1e-15))
+        score = np.divide(np.abs(centered.T @ right), denominator, out=np.zeros(len(denominator)),
+                          where=eligible & (denominator > 0))
+        scores[complete] = np.minimum(score, 1.)
+    for index in np.flatnonzero(~complete):
+        scores[index] = _corr(values[:, index], target)
+    return scores
+
+
+def _ratio_candidates(numeric, actual, selection, ranked_names, column_leaf, *, sqrt_enabled):
+    """Screen denominators without requiring marginal correlation with the target.
+
+    Only TRAIN_FIT rows rank candidates. Column blocks bound temporary memory;
+    the small shortlist still uses the unchanged full-cohort fitting and gates.
+    """
+    sample = selection[np.linspace(0, len(selection) - 1, min(RATIO_SAMPLE_ROWS, len(selection)), dtype=int)]
+    target = actual[sample]
+    names = list(ranked_names)
+    if len(sample) < 20 or len(names) < 2:
+        return []
+    found = {False: [], True: []}
+    for numerator in names[:RATIO_NUMERATOR_LIMIT]:
+        top = numeric[numerator][sample]
+        for offset in range(0, len(names), 32):
+            denominators = [name for name in names[offset:offset + 32] if name != numerator]
+            if not denominators:
+                continue
+            bottom = np.column_stack([numeric[name][sample] for name in denominators])
+            for root in (False, True) if sqrt_enabled else (False,):
+                with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
+                    values = top[:, None] / (np.sqrt(bottom) if root else bottom)
+                scores = _ratio_correlations(values, target)
+                for index, denominator in enumerate(denominators):
+                    score = scores[index]
+                    if score < .65:
+                        continue
+                    divisor = column_leaf(denominator)
+                    if root:
+                        divisor = {"operator": "SQRT", "operand": divisor}
+                    expression = _binary("DIVIDE", column_leaf(numerator), divisor)
+                    found[root].append((score, expression, [numerator, denominator], [denominator], root))
+    result = []
+    for root in (False, True) if sqrt_enabled else (False,):
+        found[root].sort(key=lambda item: (-item[0], item[2]))
+        result.extend(found[root][:RATIO_CANDIDATE_LIMIT])
+    return result
 
 
 def _cohort_metrics(indices, condition, actual, expected, tolerance, scale, invalid_actual=None):
@@ -358,7 +456,10 @@ def discover_continuous_rules(rows, columns, train_indices, validation_indices, 
             "eligibilityReasons": {}, "targetDiagnostics": [], "excludedColumns": [], "excludedTargets": []}, "warnings": []}
     max_targets = _option(options, "max_continuous_targets", "maxContinuousTargets", 16, 1, 32, True)
     max_rules = _option(options, "max_continuous_rules", "maxContinuousRules", 32, 1, 128, True)
-    max_features = _option(options, "max_formula_features", "maxFormulaFeatures", 3, 1, 4, True)
+    max_features = _option(options, "max_formula_features", "maxFormulaFeatures", 3, 1, 8, True)
+    sqrt_enabled = options.get("formulaSqrtEnabled", options.get("formula_sqrt_enabled", False))
+    if not isinstance(sqrt_enabled, bool):
+        raise ValueError("formulaSqrtEnabled must be a boolean")
     min_confidence = _option(options, "min_formula_confidence", "minFormulaConfidence", .95, .5, 1.)
     min_validation = _option(options, "min_formula_validation_confidence", "minFormulaValidationConfidence", .9, .5, 1.)
     min_r2 = _option(options, "min_formula_r2", "minFormulaR2", .9, .5, .99999)
@@ -538,30 +639,21 @@ def discover_continuous_rules(rows, columns, train_indices, validation_indices, 
             def column_leaf(name):
                 return {"column": name, **({"numericText": True} if name in numeric_text else {})}
 
-            proposals = [([column_leaf(name)], [name], [], "ROBUST_LINEAR", None) for name in predictor_names[:3]]
+            proposals = [([column_leaf(name)], [name], [], "ROBUST_LINEAR", None, False) for name in predictor_names[:3]]
             for size in range(2, min(len(predictor_names), max_features) + 1):
                 chosen = predictor_names[:size]
-                proposals.append(([column_leaf(name) for name in chosen], chosen, [], "ROBUST_LINEAR", None))
+                proposals.append(([column_leaf(name) for name in chosen], chosen, [], "ROBUST_LINEAR", None, False))
             groups = _diverse_regression_groups(numeric, actual, selection, [name for _, name in ranked], max_features)
             present_groups = {tuple(sorted(item[1])) for item in proposals}
             for chosen in groups:
                 key = tuple(sorted(chosen))
                 if key not in present_groups:
-                    proposals.append(([column_leaf(name) for name in chosen], chosen, [], "ROBUST_LINEAR", None))
+                    proposals.append(([column_leaf(name) for name in chosen], chosen, [], "ROBUST_LINEAR", None, False))
                     present_groups.add(key)
-            ratios = []
-            ratio_names = [name for _, name in ranked[:6]] if max_features >= 2 else []
-            for numerator in ratio_names:
-                for denominator in ratio_names:
-                    if numerator == denominator:
-                        continue
-                    expression = _binary("DIVIDE", column_leaf(numerator), column_leaf(denominator))
-                    values = _expression_array(expression, numeric)
-                    score = _corr(values[selection], actual[selection])
-                    if score >= .65:
-                        ratios.append((score, expression, [numerator, denominator], [denominator]))
-            ratios.sort(key=lambda item: -item[0])
-            proposals.extend(([expression], names, denominators, "ROBUST_RATIO", None) for _, expression, names, denominators in ratios[:2])
+            ratios = (_ratio_candidates(numeric, actual, selection, [name for _, name in ranked], column_leaf,
+                                        sqrt_enabled=sqrt_enabled) if max_features >= 2 else [])
+            proposals.extend(([expression], names, denominators, "ROBUST_SQRT_RATIO" if root else "ROBUST_RATIO", None, root)
+                             for _, expression, names, denominators, root in ratios)
             simple = ((unit_screen if subgroup is None else UnitFormulaScreen(numeric, selection)).candidates(target, max_terms=max_features)
                       if unit_screen else [])
             if diagnostic.get("unitIdentityOnly"):
@@ -569,9 +661,9 @@ def discover_continuous_rules(rows, columns, train_indices, validation_indices, 
                 simple = [candidate for candidate in simple if all(sign == 1 for sign in candidate["coefficients"])]
             diagnostic["unitCandidateCount"] = diagnostic.get("unitCandidateCount", 0) + len(simple)
             proposals.extend(([column_leaf(name) for name in candidate["names"]], candidate["names"], [],
-                              "SUM_DIFFERENCE", candidate["coefficients"]) for candidate in simple)
+                              "SUM_DIFFERENCE", candidate["coefficients"], False) for candidate in simple)
             accepted = []
-            for expressions, names, denominators, method, fixed_coefficients in proposals:
+            for expressions, names, denominators, method, fixed_coefficients, root_denominator in proposals:
                 diagnostic["proposalCount"] += 1
                 condition = cohort.copy()
                 atoms = [subgroup] if subgroup else []
@@ -579,8 +671,9 @@ def discover_continuous_rules(rows, columns, train_indices, validation_indices, 
                     condition &= np.isfinite(numeric[name])
                     atoms.append({**_atom(name, "NOT_NULL"), **({"numericText": True} if name in numeric_text else {})})
                 for name in denominators:
-                    condition &= numeric[name] != 0
-                    atoms.append({**_atom(name, "!=", 0, "NUMBER"), **({"numericText": True} if name in numeric_text else {})})
+                    condition &= numeric[name] > 0 if root_denominator else numeric[name] != 0
+                    atoms.append({**_atom(name, ">" if root_denominator else "!=", 0, "NUMBER"),
+                                  **({"numericText": True} if name in numeric_text else {})})
                 matrix = np.column_stack([_expression_array(expression, numeric) for expression in expressions])
                 fitting = fit_indices[condition[fit_indices] & np.isfinite(actual[fit_indices]) & np.all(np.isfinite(matrix[fit_indices]), axis=1)]
                 calibration = calibration_indices[condition[calibration_indices] & np.isfinite(actual[calibration_indices]) & np.all(np.isfinite(matrix[calibration_indices]), axis=1)]
@@ -608,6 +701,24 @@ def discover_continuous_rules(rows, columns, train_indices, validation_indices, 
                     reject(diagnostic, "CONSTANT_PREDICTION")
                     continue
                 expected = np.asarray(_expression_array(expression, numeric), dtype=float)
+                referenced = _expression_columns(expression)
+                if referenced != set(names):
+                    # Canonical zero coefficients must not leave unrelated
+                    # inputs in the published IF. Coefficients stay frozen;
+                    # recalibrate and validate all newly applicable rows.
+                    names = [name for name in names if name in referenced]
+                    condition = cohort.copy()
+                    atoms = [subgroup] if subgroup else []
+                    for name in names:
+                        condition &= np.isfinite(numeric[name])
+                        atoms.append({**_atom(name, "NOT_NULL"), **({"numericText": True} if name in numeric_text else {})})
+                    for name in denominators:
+                        if name in referenced:
+                            condition &= numeric[name] > 0 if root_denominator else numeric[name] != 0
+                            atoms.append({**_atom(name, ">" if root_denominator else "!=", 0, "NUMBER"),
+                                          **({"numericText": True} if name in numeric_text else {})})
+                    calibration = calibration_indices[condition[calibration_indices] & np.isfinite(actual[calibration_indices])
+                                                      & np.isfinite(expected[calibration_indices])]
                 fit_selection_error = float(np.quantile(np.abs(actual[fitting] - expected[fitting]), .9)) / target_scale
                 residuals = actual[calibration] - expected[calibration]
                 if not np.all(np.isfinite(residuals)):
@@ -656,10 +767,8 @@ def discover_continuous_rules(rows, columns, train_indices, validation_indices, 
                     result["numericText"] = True
                 formula = formula_expression_text(expression)
                 expected_text = f"{formula} ± {tolerance:.9g}"
-                condition_text = " AND ".join((f"{atom['column']} = {repr(atom['value'])}" if atom["operator"] == "=" else
-                                                f"{atom['column']} != 0" if atom["operator"] == "!=" else
-                                                f"NUMERIC({atom['column']}) IS NOT NULL" if atom.get("numericText") else
-                                                f"{atom['column']} IS NOT NULL") for atom in atoms)
+                from backend.services.mixed_pattern_algorithm import pattern_expression
+                condition_text = pattern_expression(predicate)
                 digest = hashlib.sha256(json.dumps([predicate, result], sort_keys=True).encode()).hexdigest()[:24].upper()
                 validation.update({"status": "VALIDATED", "source": "SELECTION_VALIDATION", "metricKind": "FORMULA_WITHIN_TOLERANCE",
                                    "absoluteTolerance": tolerance, "relativeTolerance": 0., "targetTrainingIqr": target_scale,
@@ -741,6 +850,10 @@ def discover_continuous_rules(rows, columns, train_indices, validation_indices, 
             "varyingNumericPriorityMinDistinct": 16,
             "unitSearch": {"maxTerms": max_features, "sampleRows": UNIT_SAMPLE_ROWS, "beamWidth": UNIT_BEAM_WIDTH,
                            "candidateLimitPerCohort": UNIT_CANDIDATE_LIMIT, "fitSource": "TRAIN_FIT"},
+            "ratioSearch": {"sampleRows": RATIO_SAMPLE_ROWS, "maxNumerators": RATIO_NUMERATOR_LIMIT,
+                            "denominatorPolicy": "ALL_ELIGIBLE_NUMERIC_PREDICTORS",
+                            "candidateLimitPerKind": RATIO_CANDIDATE_LIMIT,
+                            "sqrtEnabled": sqrt_enabled, "fitSource": "TRAIN_FIT"},
             "conditionalSearch": {"maxGroupsPerTarget": max_groups, "minimumCoverageGain": .05,
                                   "alreadyExplainedCoverage": .98, "groupSelectionSource": "TRAIN_FIT",
                                   "deduplicatedBy": "TRAIN_GROUP_MEMBERSHIP",

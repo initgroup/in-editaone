@@ -213,6 +213,11 @@
             return this.request("/M02001/preview-staged", { method: "POST", body: form });
         }
 
+        preflightStaged(uploadId, fileOptions) {
+            const form = this.buildUploadForm(uploadId, fileOptions);
+            return this.request("/M02001/quick-edit-preflight-staged", { method: "POST", body: form });
+        }
+
         finalizeStagedUpload(uploadId, fileOptions, workspace) {
             const form = this.buildUploadForm(uploadId, fileOptions);
             form.append("projectId", String(workspace.projectId));
@@ -267,7 +272,8 @@
                     projectId: payload.projectId,
                     scenarioId: payload.scenarioId,
                     scenarioTableId: payload.scenarioTableId,
-                    processType: payload.processType || "LEGACY"
+                    processType: payload.processType || "MIXED_XAI",
+                    ...(payload.inheritUnifiedOptions === true ? {inheritUnifiedOptions: true} : {})
                 }
             });
         }
@@ -289,7 +295,8 @@
                 flowRunId: params.flowRunId, targetOwner: params.targetOwner, targetTable: params.targetTable,
                 view: params.view || "rules", family: params.family || "CONDITION", source: params.source || "ALL",
                 page: params.page || 1, pageSize: 20, ruleKey: params.ruleKey,
-                conditionCount: params.conditionCount || "ALL", excludeZero: params.excludeZero === true
+                conditionCount: params.conditionCount || "ALL", excludeZero: params.excludeZero === true,
+                violationsOnly: params.violationsOnly === true
             }), { signal: options.signal });
         }
 

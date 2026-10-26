@@ -219,7 +219,7 @@ def mixed_xai_rule_detect(req: MlAnalysisRequest, request: Request):
 def editing_results(request: Request, flowRunId: int = Query(..., gt=0), targetOwner: str = "", targetTable: str = "",
                     view: str = "rules", family: str = "CONDITION", page: int = Query(1, ge=1, le=1000000),
                     pageSize: int = Query(20, ge=1, le=100), source: str = "ALL", ruleKey: str = "",
-                    conditionCount: str = "ALL", excludeZero: bool = False):
+                    conditionCount: str = "ALL", excludeZero: bool = False, violationsOnly: bool = False):
     from backend.services.editing_result_service import read_results
     conn = None
     try:
@@ -227,7 +227,8 @@ def editing_results(request: Request, flowRunId: int = Query(..., gt=0), targetO
         include_all_users = not getattr(request.state, "internal_api_user_id", None) and get_request_role_code(request) == "ADMIN"
         return read_results(conn, flowRunId, get_request_user_id(request), include_all_users=include_all_users,
                             target_owner=targetOwner, target_table=targetTable, view=view, family=family,
-                            page=page, page_size=pageSize, source=source, rule_key=ruleKey, condition_count=conditionCount, exclude_zero=excludeZero)
+                            page=page, page_size=pageSize, source=source, rule_key=ruleKey, condition_count=conditionCount,
+                            exclude_zero=excludeZero, violations_only=violationsOnly)
     finally:
         if conn:
             conn.close()

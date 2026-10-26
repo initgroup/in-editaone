@@ -738,7 +738,7 @@
               "key": "INPUT.P_MIXED_MAX_FORMULA_FEATURES",
               "value": "IN NUMBER",
               "defaultValue": "3",
-              "comment": "Maximum input columns per readable formula",
+              "comment": "Maximum input columns per readable formula (1 to 8); higher values expand bounded sum/difference search",
               "order": 61
             },
             {
@@ -768,6 +768,13 @@
               "defaultValue": "0.05",
               "comment": "Maximum allowed residual tolerance as a fraction of target IQR (0.001 to 0.2)",
               "order": 65
+            },
+            {
+              "key": "INPUT.P_MIXED_FORMULA_SQRT_ENABLED",
+              "value": "IN VARCHAR2",
+              "defaultValue": "false",
+              "comment": "Opt in to ratios using a square-root denominator, including fitted scale and intercept; ratio denominators must be positive",
+              "order": 66
             }
           ]
         },
@@ -1343,7 +1350,7 @@
             {
               "key": "INPUT.P_MAX_FORMULA_FEATURES",
               "value": "IN NUMBER",
-              "comment": "Maximum input columns per readable formula",
+              "comment": "Maximum input columns per readable formula (1 to 8); higher values expand bounded sum/difference search",
               "defaultValue": "3",
               "order": 20
             },
@@ -1381,6 +1388,13 @@
               "comment": "Service-managed result",
               "defaultValue": "INIT$_TB_RULEDISC_ASSOC_SUM",
               "order": 25
+            },
+            {
+              "key": "INPUT.P_FORMULA_SQRT_ENABLED",
+              "value": "IN VARCHAR2",
+              "defaultValue": "false",
+              "comment": "Opt in to ratios using a square-root denominator, including fitted scale and intercept; ratio denominators must be positive",
+              "order": 26
             }
           ]
         },

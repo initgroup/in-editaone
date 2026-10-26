@@ -75,7 +75,7 @@ const MenuRenderer = {
     },
 
     createPageLink(menu, onPageClick, isRoot = false, depth = 0) {
-        if (!menu.page || menu.enabled === false) return null;
+        if (!menu.page || menu.enabled === false || menu.hidden === true) return null;
 
         const link = document.createElement('a');
         link.href = '#';

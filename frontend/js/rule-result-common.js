@@ -130,6 +130,18 @@
         "Validated formulas were found but excluded by the final rule-count limit.": "검증된 수식은 있었지만 최종 규칙 수 제한으로 저장 대상에서 제외되었습니다.",
         "Reason counts refer to excluded columns or rejected candidates, not source rows.": "사유별 건수는 제외 컬럼 또는 탈락 후보 수이며 원본 데이터 행 수가 아닙니다.",
     };
+    Object.assign(ko, {
+        "Checking the file before creating a workspace.": "프로젝트 생성 전에 파일 형식과 데이터 수를 검사하고 있습니다.",
+        "File check failed. No project, table or FLOW was created.": "파일 사전 검사에서 중단했습니다. 프로젝트·테이블·FLOW를 생성하지 않았습니다.",
+        "The file appears to have {rows} header rows. Combine them into one column-name row and put data on the next row.": "헤더가 {rows}행으로 구성된 것으로 보입니다. 컬럼명을 한 행으로 합치고 다음 행부터 데이터를 배치해 주세요.",
+        "Data rows after the first header: {rows}. Rule discovery requires at least {minimum} actual data rows; additional header rows do not count.": "첫 행 헤더 제외 {rows}행입니다. 규칙 발굴에는 실제 데이터가 최소 {minimum}행 필요하며, 추가 헤더 행은 데이터에 포함되지 않습니다.",
+        "Detected columns: {columns}. At least {minimum} columns are required. Check the delimiter and selected Excel sheet.": "인식된 컬럼은 {columns}개입니다. 최소 {minimum}개가 필요합니다. 구분자와 Excel 시트를 확인해 주세요.",
+        "Data row {row} contains more columns than the header. Check the delimiter and column layout.": "데이터 {row}행의 컬럼 수가 헤더보다 많습니다. 구분자와 컬럼 배치를 확인해 주세요.",
+        "A cell in data row {row} exceeds 4,000 UTF-8 bytes. Shorten the value before uploading.": "데이터 {row}행에 UTF-8 기준 4,000바이트를 넘는 값이 있습니다. 값을 줄인 후 다시 선택해 주세요.",
+        "The file could not be checked. Check its format and encoding, then retry.": "파일을 검사하지 못했습니다. 파일 형식과 인코딩을 확인한 후 다시 시도해 주세요.",
+        "Excluding the suspected extra header rows leaves {rows} data rows.": "추가 헤더로 보이는 행을 제외하면 실제 데이터는 {rows}행입니다."
+    });
+
     function t(key) {
         let language = root.I18nManager?.getSessionLanguage?.();
         try { language ||= root.sessionStorage?.getItem("initLanguageCode"); } catch (_) { /* optional preference */ }
@@ -308,6 +320,10 @@
             if (typeof node.value !== "number" || !Number.isFinite(node.value)) throw new Error("Invalid formula constant");
             return String(node.value);
         }
+        if (node.operator === "SQRT") {
+            const operand = expressionSql(node.operand, depth + 1);
+            return `SQRT(CASE WHEN ${operand} >= 0 THEN ${operand} END)`;
+        }
         const operators = { ADD: "+", SUBTRACT: "-", MULTIPLY: "*", DIVIDE: "/" };
         if (!operators[node.operator]) throw new Error("Invalid formula operator");
         const left = expressionSql(node.left, depth + 1), right = expressionSql(node.right, depth + 1);
@@ -401,6 +417,13 @@
     Object.assign(ko, {
         "Unified editing": "통합 에디팅",
         "Unified editing: four automatic stages": "통합 에디팅 4단계 자동 실행",
+        "Mixed pattern editing": "혼합형 패턴 에디팅",
+        "Mixed patterns: four automatic stages": "혼합형 패턴 4단계 자동 실행",
+        "Run again with mixed patterns": "혼합형으로 새 실행",
+        "Rerun entire flow": "전체 자동 재실행",
+        "Rerun from failed stage": "실패단계부터 재실행",
+        "This stored unified run used both methods. A new run uses mixed patterns only and keeps its mixed options.": "이 통합 이력은 두 방식을 함께 사용했습니다. 다시 실행하면 혼합형 설정을 이어받아 혼합형만 새로 실행합니다.",
+        "Run mixed statistics → relationships → condition and formula discovery → violation detection once.": "혼합형 기초통계 → 관계 분석 → 조건·수식 발굴 → 위반 탐지를 한 경로로 실행합니다.",
         "Mixed XAI": "혼합형 XAI", "Type and relationship analysis": "기존 유형·관계 분석", "Saved work": "저장된 작업",
         "Run column profiling → mixed relationships → OML and mixed rule discovery → integrated violation detection automatically.": "컬럼 유형·기초통계 → 혼합 관계 분석 → OML·혼합형 규칙 발굴 → 통합 위반 탐지를 자동 실행합니다.",
         "This saved execution explains Isolation Forest anomaly candidates. Start a new run to discover actual-value patterns.": "이 실행은 과거 Isolation Forest 이상 후보 설명 규칙입니다. 실제 값 패턴 규칙은 새 실행에서 발굴합니다.",

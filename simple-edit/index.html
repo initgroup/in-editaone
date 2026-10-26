@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#113d37">
+    <title>핵심 규칙 찾기 · IN-EDITAONE</title>
+    <link rel="stylesheet" href="./simple-edit.css?v=1.6.0">
+    <script src="./rule-details.js?v=1.6.0" defer></script>
+    <script src="./history.js?v=1.6.0" defer></script>
+    <script src="./simple-edit.js?v=1.6.0" defer></script>
+</head>
+<body data-view="input">
+<div class="se-shell">
+    <header class="se-header">
+        <a class="se-brand" href="/" target="_top" aria-label="IN-EDITAONE 메인"><img src="/assets/ineditaone_compact_bilingual.png?v=20261026-ko" alt="IN-EDITAONE 인에디타원" width="170" height="48"></a>
+        <span class="se-mode" data-i18n="mode">핵심 규칙 찾기</span>
+        <div class="se-header-tools">
+            <button id="se-history-open" class="se-display-button" type="button" disabled aria-label="과거 실행" title="과거 실행"><span aria-hidden="true">◷</span><span data-i18n="historyTitle">과거 실행</span></button>
+            <span class="se-session" id="se-session" data-state="checking" role="status"><i aria-hidden="true"></i><span id="se-session-text">로그인 확인 중</span></span>
+            <button class="se-display-button" id="se-fullscreen" type="button" aria-pressed="false"><span aria-hidden="true">⛶</span><span id="se-fullscreen-label">전체 화면</span></button>
+        </div>
+    </header>
+    <main>
+        <section class="se-intro" id="se-intro">
+            <h1 data-i18n="title">수식과 조건,<br><em>핵심만 한눈에.</em></h1>
+            <p class="se-lead" data-i18n="lead">규칙을 찾고, 어긋난 데이터를 확인하세요.</p>
+        </section>
+        <section class="se-input-panel" id="se-input-panel" aria-label="분석 파일 선택">
+            <label class="se-file-picker" id="se-picker" for="se-file">
+                <input id="se-file" type="file" accept=".csv,.tsv,.xlsx,.xlsm,text/csv,text/tab-separated-values,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel.sheet.macroEnabled.12">
+                <span class="se-upload-icon" aria-hidden="true">↑</span>
+                <strong id="se-file-name" data-i18n="fileChoose">파일 선택</strong>
+                <span id="se-file-meta" data-i18n="fileHint">휴대폰의 파일도 선택할 수 있어요</span>
+            </label>
+            <p class="se-header-hint" data-i18n="headerShort">첫 행은 컬럼명 · 20MB 이하</p>
+            <p id="se-file-check" class="se-file-check" role="status" hidden></p>
+            <p id="se-column-notice" class="se-column-notice" role="status" hidden></p>
+            <p id="se-error" class="se-error" role="alert" hidden></p>
+            <a id="se-login" class="se-login" href="/" target="_top" hidden data-i18n="login">메인에서 로그인하기 →</a>
+            <button class="se-primary" id="se-run" type="button" disabled><span data-i18n="run">분석 시작</span><span aria-hidden="true">→</span></button>
+            <button class="se-secondary se-example-action" id="se-sample-run" type="button" disabled><span data-i18n="sampleRun">예제로 바로 체험</span></button>
+            <details class="se-format-help">
+                <summary data-i18n="formatTitle">파일 조건과 헤더 예시</summary>
+                <p data-i18n="formatText">컬럼명은 한 줄로, 빈 칸·중복 없이 넣어 주세요. Excel은 활성 시트를 읽습니다.</p>
+                <div class="se-table-scroll"><table><thead><tr><th>상품금액</th><th>할인금액</th><th>결제금액</th></tr></thead><tbody><tr><td>50000</td><td>3000</td><td>47000</td></tr><tr><td>80000</td><td>5000</td><td>75000</td></tr></tbody></table></div>
+                <p data-i18n="minimum">데이터 32행 이상. 앞의 100컬럼까지 분석합니다.</p>
+                <p data-i18n="limits">최대 20MB·원본 20만 행. 전체에서 최대 1만 행을 무작위로 분석합니다.</p>
+                <p data-i18n="targetLimit">조건 대상 최대 24개 · 수식 대상 최대 12개</p>
+                <a href="./sample.csv" download="인에디타원_규칙디스커버리_예제.csv" data-i18n="sample">예제 CSV 다운로드</a>
+            </details>
+        </section>
+        <section class="se-loading" id="se-loading" role="status" aria-live="polite" hidden>
+            <div class="se-loading-panel">
+                <div class="se-loading-top"><span class="se-kicker" data-i18n="mode">핵심 규칙 찾기</span><span class="se-live-dot" aria-hidden="true"></span></div>
+                <div class="se-orbit" aria-hidden="true"><span>ƒ</span></div>
+                <h1 id="se-loading-title" data-i18n="loadingTitle">규칙과 위반 데이터를 분석 중입니다</h1>
+                <p id="se-loading-help" class="se-loading-help" data-i18n="loadingHelp"></p>
+                <div class="se-loading-track" aria-hidden="true"><span></span></div>
+                <div class="se-loading-bottom"><span id="se-loading-label" data-i18n="loadingLabel">분석 진행 중</span><span id="se-elapsed"></span></div>
+            </div>
+        </section>
+        <section class="se-results" id="se-results" aria-labelledby="se-result-title" hidden>
+            <div class="se-result-heading"><div><p class="se-kicker" data-i18n="resultEyebrow">분석 결과</p><h1 id="se-result-title" tabindex="-1" data-i18n="resultTitle">발견한 핵심 규칙</h1></div><details class="se-help se-analysis-help"><summary data-i18n="analysisInfo">분석 정보 ⓘ</summary><p id="se-result-file"></p><div id="se-summary"></div><p data-i18n="resultNote"></p></details></div>
+            <p id="se-result-error" class="se-error" role="alert" hidden></p>
+            <p id="se-result-column-notice" class="se-column-notice" role="status" hidden></p>
+            <div class="se-result-board">
+            <div class="se-tabs se-result-tabs" role="tablist" aria-label="규칙 유형">
+                <button id="se-tab-formula" role="tab" aria-selected="true" aria-controls="se-rules-formula" data-family="FORMULA"><strong data-i18n="formula">수식규칙</strong><b id="se-count-formula">0</b></button>
+                <button id="se-tab-condition" role="tab" aria-selected="false" aria-controls="se-rules-condition" tabindex="-1" data-family="CONDITION"><strong data-i18n="condition">조건규칙</strong><b id="se-count-condition">0</b></button>
+            </div>
+            <div id="se-rules-formula" class="se-rule-list" role="tabpanel" aria-labelledby="se-tab-formula"></div>
+            <div id="se-rules-condition" class="se-rule-list" role="tabpanel" aria-labelledby="se-tab-condition" hidden></div>
+            <button id="se-more" class="se-text-button se-more" type="button" hidden></button>
+            </div>
+            <div class="se-result-actions"><button class="se-secondary" id="se-history-other" type="button" data-i18n="historyOtherRun" hidden>다른 실행</button><button class="se-primary" id="se-rerun" type="button" data-i18n="rerun">다시 분석</button><button class="se-secondary" id="se-new" type="button" data-i18n="newFile">다른 파일</button></div>
+        </section>
+        <section id="se-detail" class="se-detail" aria-labelledby="se-detail-title" hidden>
+            <button class="se-text-button se-back" id="se-detail-back" type="button" data-i18n="backResults">← 핵심 결과</button>
+            <div class="se-detail-overview">
+            <h1 id="se-detail-title" tabindex="-1"></h1>
+            <p id="se-detail-condition" class="se-detail-condition"></p>
+            <div id="se-detail-stats" class="se-detail-stats"></div>
+            <details class="se-help"><summary data-i18n="metricHelp">탐지·검증 기준 ⓘ</summary><p id="se-detail-help" data-i18n="detailHelp"></p><p id="se-detail-validation"></p><p id="se-detail-tolerance"></p></details>
+            </div>
+            <div class="se-tabs se-detail-tabs" role="tablist" aria-label="상세 보기">
+                <button id="se-detail-tab-graph" type="button" role="tab" aria-selected="true" aria-controls="se-detail-graph" data-detail-tab="graph" data-i18n="graph">그래프</button>
+                <button id="se-detail-tab-data" type="button" role="tab" aria-selected="false" aria-controls="se-detail-data" tabindex="-1" data-detail-tab="data" data-i18n="data">데이터</button>
+            </div>
+            <div id="se-detail-graph" role="tabpanel" aria-labelledby="se-detail-tab-graph"><h2 id="se-graph-title"></h2><p id="se-graph-hint" class="se-muted"></p><div id="se-chart" class="se-chart"></div><div id="se-row-inspector" hidden></div></div>
+            <div id="se-detail-data" role="tabpanel" aria-labelledby="se-detail-tab-data" hidden>
+                <div class="se-data-toolbar"><div class="se-filters" role="group" aria-label="데이터 구분"><button type="button" data-row-filter="ALL" aria-pressed="true" data-i18n="all">전체</button><button type="button" data-row-filter="MATCH" aria-pressed="false" data-i18n="match">일치</button><button type="button" data-row-filter="DIFFERENT" aria-pressed="false" data-i18n="different">위반</button></div><button id="se-data-download" class="se-text-button" type="button" data-i18n="downloadData">상세표본 CSV ↓</button></div>
+                <p id="se-data-scope" class="se-muted"></p><div id="se-data-table" class="se-table-scroll"></div>
+                <div class="se-pagination"><button id="se-data-prev" class="se-secondary" type="button" data-i18n="previous">이전</button><span id="se-data-page"></span><button id="se-data-next" class="se-secondary" type="button" data-i18n="next">다음</button></div>
+            </div>
+        </section>
+    </main>
+</div>
+<dialog id="se-history-dialog" class="se-history-dialog" aria-labelledby="se-history-title">
+    <div class="se-history-heading"><h2 id="se-history-title" data-i18n="historyTitle">과거 실행</h2><button id="se-history-close" class="se-display-button" type="button" aria-label="닫기">×</button></div>
+    <div class="se-history-toolbar"><p id="se-history-count" role="status"></p><button id="se-history-refresh" class="se-text-button" type="button" data-i18n="historyRefresh">새로고침</button></div>
+    <div id="se-history-list" class="se-history-list" aria-live="polite"></div>
+    <button id="se-history-more" class="se-secondary" type="button" data-i18n="historyMore" hidden>이전 실행 더 보기</button>
+</dialog>
+</body>
+</html>

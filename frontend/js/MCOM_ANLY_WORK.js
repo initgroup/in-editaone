@@ -3268,6 +3268,7 @@
             const visit = (node, depth = 0) => {
                 if (!node || depth > 12) return;
                 if (typeof node.column === "string") columns.add(node.column);
+                visit(node.operand, depth + 1);
                 visit(node.left, depth + 1);
                 visit(node.right, depth + 1);
             };

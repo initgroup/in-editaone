@@ -25,6 +25,8 @@ def formula_columns(expression):
         return {expression["column"]}
     if "value" in expression:
         return set()
+    if expression.get("operator") == "SQRT":
+        return formula_columns(expression["operand"])
     return formula_columns(expression["left"]) | formula_columns(expression["right"])
 
 

@@ -6582,6 +6582,24 @@ body.intro-mode #container-intro .env-panel {
 }
 
 /* Quick Editing은 일반 툴바 작업과 성격이 달라 전용 진입 버튼으로 구분한다. */
+.header-actions .simple-edit-launcher {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 1px solid #0f766e;
+    border-radius: 10px;
+    background: #0f766e;
+    color: #fff;
+    cursor: pointer;
+}
+.header-actions .simple-edit-launcher:hover { background: #115e59; }
+.header-actions .simple-edit-launcher:focus-visible { outline: 3px solid #facc15; outline-offset: 3px; }
+.header-actions .simple-edit-launcher > span:first-child { font: italic 24px Georgia, serif; line-height: 1; }
+
 .header-actions .quick-edit-launcher {
     position: relative;
     overflow: visible;

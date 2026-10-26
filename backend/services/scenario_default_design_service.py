@@ -127,9 +127,12 @@ def provision_default_design(
     scenario_id: int,
     scenario_table_id: int,
     process_type: str = "LEGACY",
+    inherit_unified_options: bool = False,
 ) -> Dict[str, Any]:
     """Create or reuse one independent scenario and its editable default flow."""
     process_type = normalize_process_type(process_type)
+    if inherit_unified_options and process_type != "MIXED_XAI":
+        raise HTTPException(422, "Unified options can only be inherited by a mixed-pattern design.")
     stages = {"LEGACY": DEFAULT_STAGES, "MIXED_XAI": MIXED_XAI_STAGES, "UNIFIED": UNIFIED_STAGES}[process_type]
     started_at = time.perf_counter()
     lock_started_at = time.perf_counter()
@@ -156,6 +159,7 @@ def provision_default_design(
             scenario_table_id=scenario_table_id,
             owner_name=owner_name,
             table_name=table_name,
+            **({"inherit_unified_options": True} if inherit_unified_options else {}),
         )
         job_id = int(job.get("WORK_JOB_ID") or job.get("PROFILE_JOB_ID") or 0)
         jobs.append(job)
@@ -242,6 +246,7 @@ def ensure_default_job(
     scenario_table_id: int,
     owner_name: str,
     table_name: str,
+    inherit_unified_options: bool = False,
 ) -> tuple[Dict[str, Any], bool]:
     menu_code = str(stage["menuCode"])
     model_name = str(stage["modelName"]).upper()
@@ -287,8 +292,32 @@ def ensure_default_job(
             table_name=table_name,
             sort_order=sort_order,
         )
+    if inherit_unified_options:
+        source_stage = next((item for item in UNIFIED_STAGES if item["menuCode"] == menu_code), None)
+        source = next((row for row in existing_jobs
+                       if safe_int(row.get("SCENARIO_TABLE_ID")) == scenario_table_id and source_stage
+                       and source_stage["modelName"] in {str(row.get("EXEC_METHOD") or "").upper(),
+                                                         str(row.get("EXEC_OBJECT_NAME") or "").upper()}), None)
+        if source:
+            source_id = int(source.get("WORK_JOB_ID") or source.get("PROFILE_JOB_ID"))
+            snapshot = data_work.load_job(conn, menu_code, source_id)
+            inherit_mixed_parameters(request, snapshot.get("PARAMS") or [])
     job_id = data_work.save_job(conn, menu_code, request, menu_code)
     return data_work.load_job(conn, menu_code, job_id), True
+
+
+def inherit_mixed_parameters(request, source_params):
+    """Copy only mixed tuning into a new job; identity and saved jobs stay scoped."""
+    from backend.services.integrated_editing_service import _MIXED_KEYS
+    shared = {"P_SAMPLE_ROWS", "P_EXCLUDE_COLUMNS", "P_FEATURE_COLUMNS", "P_SAMPLING_STRATEGY", "P_SAMPLE_SEED"}
+    values = {item["itemName"]: item.get("itemDefault") for item in source_params
+              if item.get("itemName") in shared}
+    values.update({"P_" + item["itemName"][len("P_MIXED_"):]: item.get("itemDefault")
+                   for item in source_params if str(item.get("itemName") or "").startswith("P_MIXED_")
+                   and "P_" + item["itemName"][len("P_MIXED_"):] in _MIXED_KEYS})
+    for item in request.params:
+        if item.get("itemName") in values:
+            item["itemDefault"] = values[item["itemName"]]
 
 
 def build_db_object_job_request(

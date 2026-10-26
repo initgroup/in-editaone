@@ -328,6 +328,37 @@ class MixedPatternServiceTests(unittest.TestCase):
         self.assertEqual(conn.commits, 0)
         self.assertEqual(conn.closed_cursors, 1)
 
+    def test_formula_search_options_accept_bounded_terms_and_explicit_boolean(self):
+        rows = [("A" if i % 2 else "B", 1 if i % 2 else 2, i + 1) for i in range(160)]
+        for count, flag, expected in ((6, " true ", True), (8, "N", False), (3, False, False)):
+            with self.subTest(count=count, flag=flag):
+                conn = self.connection(rows)
+                result = service.discover(conn, {**PAYLOAD, "P_MAX_FORMULA_FEATURES": count,
+                                                 "P_FORMULA_SQRT_ENABLED": flag})
+                self.assertEqual(count, result["options"]["maxFormulaFeatures"])
+                self.assertIs(expected, result["options"]["formulaSqrtEnabled"])
+                stored = json.loads(conn.records(xai.TABLES[0])[0]["SUMMARY_JSON"])
+                self.assertEqual(result["options"], stored["options"])
+        conn = self.connection(rows)
+        previous = service.discover(conn, PAYLOAD)
+        self.assertFalse(previous["options"]["formulaSqrtEnabled"])
+        self.assertEqual(3, previous["options"]["maxFormulaFeatures"])
+
+    def test_invalid_formula_options_fail_before_result_writes(self):
+        rows = [("A" if i % 2 else "B", 1 if i % 2 else 2, i + 1) for i in range(160)]
+        for options in ({"maxFormulaFeatures": 9}, {"maxFormulaFeatures": 5.5},
+                        {"formulaSqrtEnabled": "maybe"}, {"formulaSqrtEnabled": []}):
+            with self.subTest(options=options):
+                conn = self.connection(rows)
+                conn.seed_rules()
+                before = conn.records(service.RULE_TABLE)
+                with self.assertRaises(HTTPException) as raised:
+                    service.discover(conn, {**PAYLOAD, **options})
+                self.assertEqual(400, raised.exception.status_code)
+                self.assertEqual(before, conn.records(service.RULE_TABLE))
+                self.assertFalse(any(event[0].startswith(("PATTERN_CLEAR", "XAI_CLEAR", "PATTERN_INSERT"))
+                                     for event in conn.events))
+
     def test_detection_rejects_bad_then_before_any_result_writes(self):
         conn = self.connection()
         rule = stored_rule()

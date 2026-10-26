@@ -146,6 +146,8 @@
       "#sideRBar .geminiQuestionHeader label": "질문"
     },
     "title": {
+      ".simple-edit-launcher": "핵심 규칙 찾기\n같은 혼합형 분석으로 조건·수식 규칙과 위반 데이터를 요약해 확인합니다.",
+      ".quick-edit-launcher": "규칙 분석·데이터 편집\n조건·수식 규칙과 위반 데이터를 자세히 확인하고 편집합니다.",
       "#btnExpandAllMenus": "모두 펼치기",
       "#btnCollapseAllMenus": "모두 접기",
       "#btnSidebarCollapse": "사이드바 접기",
@@ -172,6 +174,10 @@
       "#homeFlowDetailPanel .home-icon-button": "통합 결과 분석 열기",
       "#container-home .home-company-banner": "인아이티 홈페이지 열기"
     },
+    "ariaLabel": {
+      ".simple-edit-launcher": "핵심 규칙 찾기",
+      ".quick-edit-launcher": "규칙 분석·데이터 편집"
+    },
     "placeholder": {
       "#geminiQuery": "질문을 입력하세요. Ctrl+Enter로 전송합니다."
     }
@@ -180,6 +186,10 @@
     "home": {
       "label": "메인홈",
       "title": "IN-EDITAONE"
+    },
+    "M00002": {
+      "label": "핵심 규칙 찾기",
+      "title": "핵심 규칙 찾기"
     },
     "M00001": {
       "label": "퀵 에디팅",

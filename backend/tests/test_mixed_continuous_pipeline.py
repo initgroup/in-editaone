@@ -42,7 +42,12 @@ class UploadedNumericCursor(SqlCursor):
             return adapt_numeric_text_sql(sqlite_statement(statement)).replace(
                 '"APP_OWNER"."SOURCE_DATA"', 'SOURCE_UPLOADED')
         with patch("backend.tests.test_mixed_pattern_service.sqlite_statement", side_effect=adapt):
-            return super().execute(sql, params)
+            # Oracle binds Decimal as NUMBER. SQLite CASE/function expressions
+            # have no column affinity and would compare a text bind by type.
+            # Decimal bind precision is tested separately on compiled SQL.
+            numeric_params = {key: float(value) if isinstance(value, Decimal) else value
+                              for key, value in (params or {}).items()}
+            return super().execute(sql, numeric_params)
 
 
 class UploadedNumericConnection(SqlConnection):
@@ -255,7 +260,15 @@ class MixedContinuousPipelineTests(unittest.TestCase):
         self.assertEqual(1, inference["X"]["invalidCount"])
         xai.detect(conn, {**PAYLOAD, "maxViolationRows": 1000})
         data = self.read_results(conn)
-        violations = data["violations"]
+        formula_ids = {rule["RULE_ID"] for rule in conn.records(patterns.RULE_TABLE) if rule["RESULT_KIND"] == "FORMULA"}
+        violations = [row for row in data["violations"] if row["RULE_ID"] in formula_ids]
+        # Numeric-text condition models now also expose the existing tree
+        # missing-input branch policy. Its RANGE candidates on malformed
+        # inputs/results are separate from applicability of exact formulas.
+        additional = [row for row in data["violations"] if row["RULE_ID"] not in formula_ids]
+        self.assertEqual({str(invalid_predictor + 1), str(invalid_target + 1)}, {row["CASE_ID"] for row in additional})
+        self.assertTrue(all(row["RESULT_KIND"] == "RANGE" for row in additional))
+        self.assertEqual("bad input", rows[invalid_predictor][3])
         expected_ids = {str(invalid_target + 1), str(numeric_corruption + 1)}
         self.assertEqual(expected_ids, {row["CASE_ID"] for row in violations})
         self.assertEqual(2, len(violations))

@@ -6,6 +6,7 @@
     const TARGET_CONTEXT_CHANNEL_NAME = "init.target-context.v1";
     const MODEL_TRAINING_NAVIGATION_KEY = "init.m90003.navigation.v1";
     const STATE_VERSION = 1;
+    const DEFAULT_RULE_SOURCE = "MIXED_PATTERN";
     const STEP_COUNT = 8;
     const STEPS = [
         { key: "upload", title: "파일 업로드", description: "파일을 안전하게 임시 업로드합니다." },
@@ -214,9 +215,11 @@
             completedSteps: [],
             stepProgress: 0,
             workspaceMode: "new",
-            processType: "UNIFIED",
+            processType: "MIXED_XAI",
+            inheritUnifiedOptions: false,
             fileMeta: null,
             uploadId: null,
+            fileValidationError: "",
             projectId: null,
             projectCode: "",
             projectName: "",
@@ -264,7 +267,7 @@
             return {
                 ...initialState(),
                 ...parsed,
-                processType: savedWork ? normalizeProcessType(parsed.processType) : "UNIFIED",
+                processType: savedWork ? normalizeProcessType(parsed.processType) : "MIXED_XAI",
                 completedSteps: Array.isArray(parsed.completedSteps)
                     ? [...new Set(parsed.completedSteps.map(Number).filter((value) => value >= 0 && value < STEP_COUNT))]
                     : [],
@@ -338,7 +341,7 @@
     }
 
     function processLabel() {
-        return window.RuleResultCommon.t(isUnifiedEditing() ? "Unified editing" : isMixedXai() ? "Mixed XAI" : "Type and relationship analysis");
+        return window.RuleResultCommon.t(isUnifiedEditing() ? "Unified editing" : isMixedXai() ? "Mixed pattern editing" : "Type and relationship analysis");
     }
 
     function renderProcessSelection() {
@@ -349,13 +352,15 @@
             byId("closeButton", "qeCloseButton")?.setAttribute("title", t("Go to Main Home"));
             byId("closeButton", "qeCloseButton")?.setAttribute("aria-label", t("Go to Main Home"));
         }
-        setText(byId("qeProcessName"), isUnifiedEditing()
-            ? t("Unified editing: four automatic stages") : `${processLabel()} · ${t("Saved work")}`);
         const oldXai = Boolean(resultData.mixedXai) && !window.RuleResultCommon.isPattern(resultData.mixedXai);
+        setText(byId("qeProcessName"), isUnifiedEditing()
+            ? t("Unified editing: four automatic stages") : isMixedXai()
+            ? (oldXai ? `${t("Mixed XAI")} · ${t("Saved work")}` : t("Mixed patterns: four automatic stages"))
+            : `${processLabel()} · ${t("Saved work")}`);
         setText(byId("qeProcessDescription"), isUnifiedEditing()
-            ? t("Run column profiling → mixed relationships → OML and mixed rule discovery → integrated violation detection automatically.")
+            ? t("This stored unified run used both methods. A new run uses mixed patterns only and keeps its mixed options.")
             : isMixedXai()
-            ? (oldXai ? t("This saved execution explains Isolation Forest anomaly candidates. Start a new run to discover actual-value patterns.") : window.RuleResultCommon.t("Rules predict actual column values, ranges and formulas after basic statistics and relationship analysis."))
+            ? (oldXai ? t("This saved execution explains Isolation Forest anomaly candidates. Start a new run to discover actual-value patterns.") : t("Run mixed statistics → relationships → condition and formula discovery → violation detection once."))
             : t("Analyze column types and relationships, then discover categorical and continuous rules."));
         setHidden(byId("qeCommonResults"), false);
         setHidden(byId("qeMixedXaiResults"), !hasMixedAnalysis() || Boolean(editingResults && !editingResults.historical && editingResults.auxiliary.diagnostics !== "loaded"));
@@ -550,7 +555,7 @@
             rejectFileSelection("빈 파일은 업로드할 수 없습니다.");
             return;
         }
-        if (state.projectId || state.tableName || state.flowRunId) {
+        if (state.uploadId || state.projectId || state.tableName || state.flowRunId) {
             resetPipelineState({ keepForm: false, announce: false });
         }
         selectedFile = file;
@@ -561,6 +566,7 @@
             lastModified: file.lastModified || null
         };
         state.error = "";
+        state.fileValidationError = "";
         generateWorkspaceDefaults(file.name);
         persistState();
         renderFile();
@@ -580,6 +586,9 @@
     }
 
     function renderFile() {
+        const validationMessage = byId("qeFileValidationMessage");
+        setText(validationMessage, state.fileValidationError || "");
+        setHidden(validationMessage, !state.fileValidationError);
         const meta = selectedFile
             ? { name: selectedFile.name, size: selectedFile.size }
             : state.fileMeta;
@@ -1061,6 +1070,7 @@
             ["FAILED", "ERROR", "CANCELLED"].includes(R.normalizeStatus(node.STATUS || node.status))
         );
         if (historyFullRerunButton) {
+            setText(historyFullRerunButton, window.RuleResultCommon.t(isUnifiedEditing() ? "Run again with mixed patterns" : "Rerun entire flow"));
             historyFullRerunButton.hidden = !readOnlyHistory;
             historyFullRerunButton.disabled = pipelineBusy
                 || !client.targetConnectionId
@@ -1069,6 +1079,7 @@
             setRunningState(historyFullRerunButton, PIPELINE_ACTION.HISTORY_FULL_RERUN);
         }
         if (historyFailedRerunButton) {
+            setText(historyFailedRerunButton, window.RuleResultCommon.t(isUnifiedEditing() ? "Run again with mixed patterns" : "Rerun from failed stage"));
             historyFailedRerunButton.hidden = !readOnlyHistory;
             historyFailedRerunButton.disabled = pipelineBusy
                 || !client.targetConnectionId
@@ -1203,6 +1214,23 @@
         pipelineBusy = true;
         activePipelineAction = options.pipelineAction || PIPELINE_ACTION.FULL_AUTO;
         captureWorkspaceDraft();
+        if (isUnifiedEditing() && (!state.flowRunId || options.forceNewRun)) {
+            if (state.flowRunId) state.previousFlowRunIds = [...state.previousFlowRunIds, state.flowRunId].slice(-5);
+            state.processType = "MIXED_XAI";
+            state.inheritUnifiedOptions = true;
+            state.historyView = false;
+            state.historySteps = [];
+            state.flowId = null;
+            state.flowName = "";
+            state.jobIds = [];
+            state.flowRunId = null;
+            state.runRequestToken = "";
+            state.lastRunStatus = "";
+            state.failedStageRerunRequestToken = "";
+            state.columnTypeRerunRequestToken = "";
+            currentSnapshot = null;
+            persistState();
+        }
         state.status = "running";
         state.error = "";
         state.resultWarning = "";
@@ -1219,6 +1247,21 @@
                 state.uploadId = staged.uploadId;
                 state.fileMeta = { ...state.fileMeta, name: staged.fileName, size: staged.fileSize };
                 persistState();
+            }
+            if (!state.tableName) {
+                setStep(0, window.RuleResultCommon.t("Checking the file before creating a workspace."), 1);
+                state.fileValidationError = "";
+                renderFile();
+                try {
+                    const inspection = await client.preflightStaged(state.uploadId, getFileOptions());
+                    if (inspection.valid !== true) throw new Error(formatFileValidationIssues(inspection));
+                } catch (error) {
+                    if (error?.name === "AbortError") throw error;
+                    state.fileValidationError = error.message || window.RuleResultCommon.t("The file could not be checked. Check its format and encoding, then retry.");
+                    renderFile();
+                    throw error;
+                }
+                controlCheckpoint();
             }
             completeStep(0, "파일 임시 업로드가 완료되었습니다.");
             controlCheckpoint();
@@ -1256,13 +1299,42 @@
             state.error = error?.message || "자동 작업 중 오류가 발생했습니다.";
             persistState();
             renderState();
-            showToast(state.error, "error");
+            if (!state.fileValidationError || state.currentStep !== 0) showToast(state.error, "error");
         } finally {
             pipelineBusy = false;
             activePipelineAction = "";
             updateActionState();
             renderColumnTypeFinal();
         }
+    }
+
+    function formatFileValidationIssues(inspection) {
+        const t = window.RuleResultCommon.t;
+        const format = (key, values) => Object.entries(values).reduce(
+            (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)), t(key)
+        );
+        const messages = (inspection.issues || []).map((issue) => {
+            switch (issue.code) {
+            case "MULTI_ROW_HEADER":
+                return format("The file appears to have {rows} header rows. Combine them into one column-name row and put data on the next row.", {rows: issue.headerRows});
+            case "TOO_FEW_ROWS":
+                return format("Data rows after the first header: {rows}. Rule discovery requires at least {minimum} actual data rows; additional header rows do not count.", {rows: issue.rows, minimum: issue.minimum});
+            case "TOO_FEW_COLUMNS":
+                return format("Detected columns: {columns}. At least {minimum} columns are required. Check the delimiter and selected Excel sheet.", {columns: issue.columns, minimum: issue.minimum});
+            case "ROW_WIDTH":
+                return format("Data row {row} contains more columns than the header. Check the delimiter and column layout.", {row: issue.row});
+            case "CELL_SIZE":
+                return format("A cell in data row {row} exceeds 4,000 UTF-8 bytes. Shorten the value before uploading.", {row: issue.row});
+            default:
+                return t("The file could not be checked. Check its format and encoding, then retry.");
+            }
+        });
+        if (inspection.rowCountExact && inspection.additionalHeaderRows > 0) {
+            messages.push(format("Excluding the suspected extra header rows leaves {rows} data rows.", {
+                rows: Math.max(0, inspection.checkedDataRows - inspection.additionalHeaderRows)
+            }));
+        }
+        return [t("File check failed. No project, table or FLOW was created."), ...messages].join("\n");
     }
 
     async function ensureProject() {
@@ -1429,11 +1501,15 @@
                 projectId: state.projectId,
                 scenarioId: state.scenarioId,
                 scenarioTableId: state.scenarioTableId,
-                processType: state.processType
+                processType: state.processType,
+                ...(state.inheritUnifiedOptions ? {inheritUnifiedOptions: true} : {})
             });
             const automation = design.automation || {};
             if (automation.status !== "success") {
                 throw new Error(automation.message || "대상 테이블은 등록되었지만 선택한 시나리오의 자동 설계에 실패했습니다.");
+            }
+            if (automation.processType && normalizeProcessType(automation.processType) !== state.processType) {
+                throw new Error("The prepared FLOW does not match the selected execution method.");
             }
             state.jobIds = Array.isArray(automation.jobIds)
                 ? [...new Set(automation.jobIds.map(Number).filter((jobId) => Number.isInteger(jobId) && jobId > 0))]
@@ -1444,6 +1520,7 @@
             if (!state.scenarioTableId || state.jobIds.length !== modelStageCount() || !state.flowId) {
                 throw new Error("선택한 시나리오의 모델 또는 FLOW 저장 결과가 완전하지 않습니다.");
             }
+            state.inheritUnifiedOptions = false;
             persistState();
         }
     }
@@ -1812,7 +1889,7 @@
             persistState();
         }
         const scope = editingScopeKey();
-        editingResults = { scope, family: "CONDITION", source: "ALL", page: 1, conditionCount: "ALL", excludeZero: false, cache: new Map(),
+        editingResults = { scope, family: "CONDITION", source: DEFAULT_RULE_SOURCE, page: 1, conditionCount: "ALL", excludeZero: true, cache: new Map(),
             payload: null, selectedKey: "", loading: false, error: "", auxiliary: {} };
         resultData = { categorical: null, continuous: null, categoricalViolation: null,
             continuousViolation: null, descriptiveStatistics: null, columnTypeFinal: null };
@@ -1827,11 +1904,11 @@
         ["qeLoadStatistics", "qeLoadColumnTypes", "qeLoadDiagnostics"].forEach((id) => { if (byId(id)) byId(id).disabled = false; });
         const detailMount = byId("qeEditingDetail");
         ["qeCategoricalDetail", "qeContinuousDetail"].forEach((id) => { const panel = byId(id); if (panel) detailMount?.append(panel); });
-        await loadEditingPage("CONDITION", 1, "ALL");
+        await loadEditingPage("CONDITION", 1, DEFAULT_RULE_SOURCE);
         if (editingResults?.scope === scope) state.resultWarning = editingResults.error || "";
     }
 
-    async function loadEditingPage(family = "CONDITION", page = 1, source = "ALL", force = false) {
+    async function loadEditingPage(family = "CONDITION", page = 1, source = DEFAULT_RULE_SOURCE, force = false) {
         if (!editingResults || contextLoss) return;
         const browser = editingResults;
         const cacheKey = `${family}:${source}:${page}:${browser.conditionCount}:${browser.excludeZero}`;
@@ -1857,7 +1934,7 @@
         const controller = new AbortController();
         editingRequestAbort = controller;
         try {
-            const response = await client.getEditingResults({ ...editingScope(), view: "rules", family: browser.family, page: browser.page, source, conditionCount: browser.conditionCount, excludeZero: browser.excludeZero }, { signal: controller.signal });
+            const response = await client.getEditingResults({ ...editingScope(), view: "rules", family: browser.family, page: browser.page, source, conditionCount: browser.conditionCount, excludeZero: true, violationsOnly: true }, { signal: controller.signal });
             if (requestId !== editingRequestGeneration || editingResults !== browser || browser.scope !== editingScopeKey()) return;
             const payload = response?.data;
             if (!payload || !Array.isArray(payload.rules)) throw new Error(window.RuleResultCommon.t("Rule summary is unavailable. Reload after restarting the backend."));
@@ -1887,14 +1964,13 @@
         renderProcessSelection();
         editingViewCleanup?.();
         target.innerHTML = window.EditingResultView.render(browser.payload || { rules: [] }, {
-            family: browser.family, source: browser.source, loading: browser.loading, error: browser.error,
-            filters: {conditionCount: browser.conditionCount, excludeZero: browser.excludeZero},
+            family: browser.family, source: browser.source, defaultSource: DEFAULT_RULE_SOURCE, loading: browser.loading, error: browser.error,
+            filters: {conditionCount: browser.conditionCount, excludeZero: true, violationsOnly: true},
             showFamilies: true, showSourceFilter: true, t: window.RuleResultCommon.t
         });
         editingViewCleanup = window.EditingResultView.bind(target, {
-            onFamily: (family) => {browser.conditionCount = "ALL"; loadEditingPage(family, 1, "ALL");},
+            onFamily: (family) => {browser.conditionCount = "ALL"; loadEditingPage(family, 1, DEFAULT_RULE_SOURCE);},
             onCondition: (count) => {browser.conditionCount = count; loadEditingPage(browser.family, 1, browser.source);},
-            onExcludeZero: (exclude) => {browser.excludeZero = exclude; loadEditingPage(browser.family, 1, browser.source);},
             onPage: (page) => loadEditingPage(browser.family, page, browser.source),
             onSource: (source) => loadEditingPage(browser.family, 1, source),
             onRetry: () => loadEditingPage(browser.family, browser.page, browser.source, true),
@@ -2694,6 +2770,7 @@
             return;
         }
 
+        if (isUnifiedEditing()) return rerunEntireHistoryFlow();
         pipelineBusy = true;
         activePipelineAction = PIPELINE_ACTION.COLUMN_TYPE_RERUN;
         state.status = "running";
@@ -4531,7 +4608,8 @@
             projectId: Number(state.projectId),
             scenarioId: Number(state.scenarioId),
             flowId: Number(state.flowId),
-            flowRunId: Number(state.flowRunId)
+            flowRunId: Number(state.flowRunId),
+            processType: state.processType
         };
     }
 
@@ -4557,7 +4635,8 @@
         if (
             Number(state.projectId) !== savedWorkspace.projectId
             || Number(state.scenarioId) !== savedWorkspace.scenarioId
-            || Number(state.flowId) !== savedWorkspace.flowId
+            || (Number(state.flowId) !== savedWorkspace.flowId
+                && !(savedWorkspace.processType === "UNIFIED" && isMixedXai()))
         ) {
             state.status = "failed";
             state.error = "기존 프로젝트·시나리오·FLOW ID가 유지되지 않아 재실행 결과를 확인해야 합니다.";
@@ -4568,6 +4647,7 @@
 
     async function rerunHistoryFromFailedStage() {
         if (pipelineBusy) return;
+        if (isUnifiedEditing()) return rerunEntireHistoryFlow();
         let savedWorkspace;
         try {
             savedWorkspace = validateHistoryRerun();

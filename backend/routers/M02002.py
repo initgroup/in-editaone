@@ -48,6 +48,7 @@ class ScenarioDefaultDesignRequest(BaseModel):
     scenarioId: int
     scenarioTableId: int
     processType: Literal["LEGACY", "MIXED_XAI", "UNIFIED"] = "LEGACY"
+    inheritUnifiedOptions: bool = False
     model_config = ConfigDict(extra="forbid")
 
 
@@ -580,6 +581,7 @@ def provision_scenario_default_design(req: ScenarioDefaultDesignRequest, request
             scenario_id=scenario_id,
             scenario_table_id=scenario_table_id,
             process_type=req.processType,
+            **({"inherit_unified_options": True} if req.inheritUnifiedOptions else {}),
         )
         conn.commit()
         logger.info(
