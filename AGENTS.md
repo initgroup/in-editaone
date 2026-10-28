@@ -10,6 +10,7 @@
 - 스크립트 절대경로와 VS Code 작업 폴더는 `D:\work\in-editaone`을 사용합니다. 스크립트 내부 루트는 `$PSScriptRoot` 또는 파일 위치로 계산합니다.
 - `INIT$_*` DB 오브젝트, SQL ID, API 경로, `INIT_*` 환경변수, 저장된 JSON/브라우저 키는 제품명과 별개인 호환 계약입니다. 브랜딩을 이유로 변경하지 않습니다.
 - `backend/branding.py`는 기존 기본 표시값을 읽을 때만 새 브랜드로 매핑합니다. DB 저장값을 갱신하지 않습니다.
+- 탭·바로가기 아이콘은 기존 로고의 체크 표시 ‘O’를 사용합니다. `reference/branding/build-icons.mjs`로 `frontend/assets/ineditaone-icon*`와 `frontend/favicon.ico`를 재생성합니다. 바탕화면 바로가기는 `scripts/create-desktop-shortcut.ps1`로 만들고, 프로젝트 이동 시 다시 실행해 아이콘 경로를 갱신합니다.
 - 배포 소스와 `reference/` 참조 자료를 구분하고, 의존성 변경 시 `reference/environment/`의 재현 목록도 함께 유지합니다.
 - 로컬 폴더 변경은 완료했습니다. `complete-project-rename.ps1`은 새 폴더에서 재실행해도 서버를 중지하지 않습니다. 전환 절차와 검증 범위는 `reference/BRAND_MIGRATION.md`를 확인합니다.
 

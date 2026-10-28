@@ -8,6 +8,12 @@
 
 실행 소스는 `frontend/`, `backend/`, `database/`, `quick-edit/`, `simple-edit/`에, 환경 재현 목록·브랜드 제작 원본은 [reference/](reference/README.md)에 보관합니다.
 
+브라우저 탭과 바로가기에는 기존 로고의 체크 표시 ‘O’를 사용합니다. SVG·PNG는 `frontend/assets/ineditaone-icon*`, Windows 다중 해상도 아이콘은 `frontend/favicon.ico`이며 `node reference/branding/build-icons.mjs`로 재생성합니다(기존 Playwright·Chromium 사용). 바탕화면에 기본 브라우저로 로컬 서비스를 여는 **인에디타원** 바로가기를 만들려면 아래 명령을 실행합니다. 서비스는 먼저 시작되어 있어야 합니다. 운영 주소는 `-Url 'https://실제서비스주소/'`로 지정합니다. 프로젝트 이동 후에는 아이콘 경로 갱신을 위해 다시 실행합니다.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\create-desktop-shortcut.ps1
+```
+
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-service.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\stop-service.ps1
